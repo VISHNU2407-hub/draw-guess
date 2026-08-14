@@ -234,6 +234,7 @@ leaveRoomBtn.addEventListener("click", () => {
 
 function resetRoomUI() {
   currentGameStatus = "LOBBY";
+  document.body.dataset.gameStatus = "LOBBY";
   currentDrawerId = null;
   currentDrawerName = null;
   roomPlayerCount = 0;
@@ -319,6 +320,7 @@ function renderRoom(room) {
   roomViewEl.classList.remove("hidden");
 
   currentGameStatus = room.gameStatus;
+  document.body.dataset.gameStatus = currentGameStatus; // drives responsive layout CSS
   currentDrawerId = room.currentDrawer;
   roomPlayerCount = room.playerCount;
   amLeader = room.players.some((p) => p.socketId === socket.id && p.isLeader);
@@ -521,6 +523,51 @@ function extendStroke(x, y) {
 function clearCanvas() {
   ctx.clearRect(0, 0, canvas.width, canvas.height);
 }
+
+// ---------------------------------------------------------------------------
+// Responsive canvas sizing (phones + tablets)
+// ---------------------------------------------------------------------------
+// The canvas keeps a FIXED 800x500 backing store (the shared logical drawing
+// space used by every client and the socket protocol), so stroke coordinates
+// map identically on all devices and resizing never wipes the drawing. We only
+// adjust the CSS display size to fill the stage while preserving the 800:500
+// ratio. getPos() already converts screen -> logical coordinates correctly.
+const canvasStageEl = document.getElementById("canvas-stage");
+const desktopQuery = window.matchMedia("(min-width: 1100px)");
+
+function fitCanvasToStage() {
+  if (desktopQuery.matches) {
+    // Desktop keeps the CSS-driven layout — clear any inline size we set.
+    canvas.style.width = "";
+    canvas.style.height = "";
+    return;
+  }
+  if (!isInRoom() || !canvasStageEl) return;
+
+  const availW = canvasStageEl.clientWidth;
+  const availH = canvasStageEl.clientHeight;
+  if (availW <= 0 || availH <= 0) return;
+
+  const RATIO = canvas.width / canvas.height; // 800 / 500
+  let cssW = availW;
+  let cssH = cssW / RATIO;
+  if (cssH > availH) {
+    cssH = availH;
+    cssW = cssH * RATIO;
+  }
+  canvas.style.width = Math.floor(cssW) + "px";
+  canvas.style.height = Math.floor(cssH) + "px";
+}
+
+if (canvasStageEl) {
+  const stageObserver = new ResizeObserver(() => fitCanvasToStage());
+  stageObserver.observe(canvasStageEl);
+}
+window.addEventListener("resize", fitCanvasToStage);
+window.addEventListener("orientationchange", () => {
+  // Let the rotated layout settle before measuring.
+  setTimeout(fitCanvasToStage, 150);
+});
 
 canvas.addEventListener("pointerdown", (e) => {
   if (!isInRoom() || !amCurrentDrawer()) return;

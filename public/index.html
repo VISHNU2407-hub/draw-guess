@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
   <title>Draw &amp; Guess</title>
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
@@ -87,7 +87,9 @@
             <button id="clear-canvas-btn" class="btn btn-small">Clear</button>
           </div>
 
-          <canvas id="drawing-canvas" width="800" height="500"></canvas>
+          <div class="canvas-stage" id="canvas-stage">
+            <canvas id="drawing-canvas" width="800" height="500"></canvas>
+          </div>
         </div>
 
         <!-- Chat -->

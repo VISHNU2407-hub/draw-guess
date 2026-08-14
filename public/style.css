@@ -328,163 +328,8 @@ body::after {
   align-items: stretch;
 }
 
-@media (min-width: 720px) and (max-width: 1099px) {
-  /* Tablet: narrower sidebars, keep the 3-column layout */
-  .room-layout {
-    grid-template-columns: 165px minmax(0, 1fr) 250px;
-    gap: 0.9rem;
-  }
-
-  .player-list li {
-    padding: 0.4rem 0.55rem;
-    gap: 0.4rem;
-  }
-}
-
-@media (max-width: 719px) {
-  /* Mobile: stacked layout prioritizing the canvas.
-     Order: header/timer, room code, word banner, canvas, controls,
-     then leaderboard, then chat. */
-  body {
-    padding: 1rem 0.75rem;
-  }
-
-  .title-bar {
-    margin-bottom: 1rem;
-  }
-
-  .game-title {
-    font-size: 1.7rem;
-  }
-
-  .sound-toggle {
-    width: 40px;
-    height: 40px;
-    font-size: 1rem;
-  }
-
-  .room-panel {
-    padding: 1rem 0.85rem;
-  }
-
-  .room-header {
-    flex-wrap: wrap;
-    gap: 0.5rem;
-  }
-
-  .room-code {
-    font-size: 1.35rem;
-    letter-spacing: 3px;
-  }
-
-  .room-meta {
-    gap: 0.6rem;
-    flex-wrap: wrap;
-  }
-
-  .room-meta .timer {
-    font-size: 1.15rem;
-    min-width: 58px;
-  }
-
-  .room-meta .game-info {
-    font-size: 0.82rem;
-  }
-
-  .room-layout {
-    grid-template-columns: 1fr;
-    gap: 1rem;
-  }
-
-  .players-sidebar {
-    order: 2;
-  }
-
-  .canvas-area {
-    order: 1;
-    display: flex;
-    flex-direction: column;
-  }
-
-  #word-banner,
-  .timer-bar {
-    order: 1;
-  }
-
-  #word-banner {
-    min-height: 2.9rem;
-    font-size: 1rem;
-  }
-
-  #drawing-canvas {
-    order: 2;
-  }
-
-  .canvas-toolbar {
-    order: 3;
-    gap: 0.6rem;
-    padding: 0.6rem;
-  }
-
-  .palette .swatch {
-    width: 34px;
-    height: 34px;
-  }
-
-  #brush-size-input {
-    width: 90px;
-  }
-
-  .chat-sidebar {
-    order: 3;
-  }
-
-  /* Comfortable touch targets */
-  .btn {
-    min-height: 46px;
-  }
-
-  .canvas-toolbar .btn-small {
-    min-height: 44px;
-    padding: 0.6rem 0.95rem;
-    font-size: 0.9rem;
-  }
-
-  .category-select {
-    min-height: 46px;
-    font-size: 1rem;
-  }
-
-  .word-option {
-    font-size: 1.05rem;
-    padding: 0.7rem 1.15rem;
-  }
-
-  .chat-messages {
-    flex: none;
-    height: 200px;
-  }
-
-  .chat-input-row input {
-    min-height: 46px;
-    font-size: 1rem;
-  }
-
-  .chat-input-row .btn {
-    min-height: 46px;
-  }
-
-  .modal-panel {
-    padding: 1.4rem 1.1rem;
-    max-height: 90vh;
-    overflow-y: auto;
-  }
-
-  .player-list .player-avatar {
-    width: 32px;
-    height: 32px;
-  }
-}
+/* Responsive gameplay layout rules (phones + tablets) live at the end
+   of this file so they override the base rules above. */
 
 /* ---- Players sidebar ---- */
 .players-area h3,
@@ -1113,5 +958,662 @@ body::after {
   to {
     transform: translate(var(--drift, 0px), 108vh) rotate(540deg);
     opacity: 0.6;
+  }
+}
+
+/* =====================================================================
+   Responsive gameplay layout (phones + tablets)
+   ---------------------------------------------------------------------
+   Desktop (>= 1100px) keeps the 3-column layout defined above, untouched.
+   Below 1100px the game fills the viewport like an app:
+   - the canvas is the primary, largest element
+   - chat scrolls internally; the guess input + SEND stay pinned below it
+   - no page scrolling during gameplay
+   ===================================================================== */
+
+/* ---- Canvas stage: wrapper that gives the canvas a definite box ---- */
+.canvas-stage {
+  display: block;
+  min-width: 0;
+  min-height: 0;
+}
+
+@media (max-width: 1099px) {
+  /* ---- In-room: the game fills the viewport, no page scroll ---- */
+  body:has(#room-view:not(.hidden)) {
+    padding: 0;
+    overflow: hidden;
+  }
+
+  body:has(#room-view:not(.hidden)) .app {
+    max-width: none;
+    height: 100vh;
+    height: 100dvh;
+    display: flex;
+    flex-direction: column;
+  }
+
+  /* Slim title bar while in a room (tagline hidden, sound toggle kept) */
+  body:has(#room-view:not(.hidden)) .title-bar {
+    flex: 0 0 auto;
+    margin: 0;
+    min-height: 40px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+
+  body:has(#room-view:not(.hidden)) .game-title {
+    font-size: 1.05rem;
+    margin: 0;
+  }
+
+  body:has(#room-view:not(.hidden)) .tagline {
+    display: none;
+  }
+
+  body:has(#room-view:not(.hidden)) .sound-toggle {
+    top: 2px;
+    right: 0;
+    width: 34px;
+    height: 34px;
+    font-size: 0.95rem;
+  }
+
+  body:has(#room-view:not(.hidden)) .room-panel {
+    flex: 1 1 auto;
+    min-height: 0;
+    display: flex;
+    flex-direction: column;
+    padding: 0.9rem;
+    border-radius: 16px;
+  }
+
+  body:has(#room-view:not(.hidden)) .room-header {
+    flex: 0 0 auto;
+    margin-bottom: 0.6rem;
+  }
+
+  /* ---- Canvas area: canvas stage absorbs all leftover space ---- */
+  .canvas-area {
+    display: flex;
+    flex-direction: column;
+    min-height: 0;
+    min-width: 0;
+  }
+
+  .canvas-stage {
+    flex: 1 1 auto;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+
+  /* The JS fitter sets explicit pixel size preserving 800:500; these
+     max constraints are the pre-JS fallback (no overflow, no stretch). */
+  #drawing-canvas {
+    width: auto;
+    height: auto;
+    max-width: 100%;
+    max-height: 100%;
+    aspect-ratio: 800 / 500;
+  }
+
+  /* ---- During play, hide lobby-only sidebar controls ---- */
+  body[data-game-status="PLAYING"] .category-box,
+  body[data-game-status="PLAYING"] #start-game-btn,
+  body[data-game-status="PLAYING"] #start-error,
+  body[data-game-status="PLAYING"] .room-note {
+    display: none;
+  }
+
+  /* ---- Chat: internal scroll only, input + SEND pinned below ---- */
+  .chat-sidebar {
+    min-width: 0;
+    min-height: 0;
+  }
+
+  .chat-panel {
+    height: 100%;
+  }
+}
+
+/* ---- Tablets (>= 720px) and any landscape screen < 1100px ----
+   Two-column gameplay: big canvas left, chat right, players as a slim
+   horizontal bar on top. Uses screen width efficiently instead of
+   stacking like a stretched phone. */
+@media (min-width: 720px) and (max-width: 1099px), (max-width: 1099px) and (orientation: landscape) {
+  .room-layout {
+    flex: 1 1 auto;
+    min-height: 0;
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) minmax(230px, 280px);
+    grid-template-rows: auto minmax(0, 1fr);
+    grid-template-areas:
+      "players players"
+      "canvas chat";
+    gap: 0.7rem;
+    overflow-y: auto;
+  }
+
+  /* Players: horizontal bar spanning both columns */
+  .players-sidebar {
+    grid-area: players;
+    display: flex;
+    align-items: center;
+    gap: 0.8rem;
+    padding: 0.5rem 0.7rem;
+    background: rgba(20, 16, 38, 0.55);
+    border: 1px solid var(--panel-border);
+    border-radius: 12px;
+  }
+
+  .players-sidebar .players-area {
+    flex: 1 1 auto;
+    min-width: 0;
+  }
+
+  .players-sidebar .players-area h3 {
+    display: none;
+  }
+
+  .players-sidebar .player-list {
+    flex-direction: row;
+    flex-wrap: nowrap;
+    overflow-x: auto;
+    gap: 0.4rem;
+    scrollbar-width: none; /* keep the bar slim — chips still scroll by touch */
+  }
+
+  .players-sidebar .player-list::-webkit-scrollbar {
+    display: none;
+  }
+
+  .players-sidebar .player-list li {
+    flex: 0 0 auto;
+    padding: 0.35rem 0.55rem;
+    gap: 0.35rem;
+  }
+
+  .players-sidebar .player-list .player-avatar {
+    width: 26px;
+    height: 26px;
+    font-size: 0.7rem;
+  }
+
+  .players-sidebar .player-list .player-name {
+    font-size: 0.8rem;
+    max-width: 110px;
+  }
+
+  .players-sidebar .player-list .player-score {
+    font-size: 0.7rem;
+  }
+
+  /* Category + start button sit in the bar before the game starts */
+  .players-sidebar .category-box {
+    flex: 0 0 auto;
+    width: 185px;
+    margin-top: 0;
+    padding: 0.4rem 0.55rem;
+  }
+
+  .players-sidebar .category-box h3 {
+    display: none;
+  }
+
+  .players-sidebar #start-game-btn {
+    flex: 0 0 auto;
+    width: auto;
+    margin-top: 0;
+    padding: 0.55rem 1rem;
+  }
+
+  .players-sidebar .leave-btn {
+    flex: 0 0 auto;
+    width: auto;
+    margin-top: 0;
+    padding: 0.45rem 0.7rem;
+    white-space: nowrap;
+  }
+
+  .players-sidebar .room-note {
+    display: none;
+  }
+
+  /* Canvas (left) / chat (right) columns */
+  .canvas-area {
+    grid-area: canvas;
+    gap: 0.5rem;
+  }
+
+  .chat-sidebar {
+    grid-area: chat;
+    height: 100%;
+  }
+}
+
+/* ---- Landscape: compact header/toolbar, more width for the canvas ---- */
+@media (max-width: 1099px) and (orientation: landscape) {
+  .room-layout {
+    grid-template-columns: minmax(0, 1fr) minmax(200px, 34vw);
+  }
+
+  body:has(#room-view:not(.hidden)) .room-header {
+    margin-bottom: 0.3rem;
+  }
+
+  body:has(#room-view:not(.hidden)) .room-panel {
+    padding: 0.5rem 0.7rem;
+    padding-left: max(0.7rem, env(safe-area-inset-left));
+    padding-right: max(0.7rem, env(safe-area-inset-right));
+  }
+
+  .room-code {
+    font-size: 1.05rem;
+    letter-spacing: 2px;
+  }
+
+  .room-meta {
+    gap: 0.5rem;
+  }
+
+  .room-meta .timer {
+    font-size: 1rem;
+    min-width: 44px;
+  }
+
+  .room-meta .game-info {
+    font-size: 0.72rem;
+  }
+
+  #word-banner {
+    min-height: 2.2rem;
+    padding: 0.35rem 0.6rem;
+    font-size: 0.9rem;
+    margin-bottom: 0.25rem;
+  }
+
+  .timer-bar {
+    margin-bottom: 0.25rem;
+  }
+
+  .canvas-toolbar {
+    flex-wrap: nowrap;
+    overflow-x: auto;
+    padding: 0.35rem 0.5rem;
+    gap: 0.4rem;
+    margin-bottom: 0;
+  }
+
+  .canvas-toolbar .tool span {
+    display: none;
+  }
+
+  .palette {
+    flex-wrap: nowrap;
+    overflow-x: auto;
+  }
+
+  .palette .swatch {
+    width: 24px;
+    height: 24px;
+    flex-shrink: 0;
+  }
+
+  #brush-size-input {
+    width: 70px;
+  }
+
+  .canvas-area {
+    gap: 0.35rem;
+  }
+
+  .players-sidebar {
+    padding: 0.35rem 0.55rem;
+  }
+
+  .players-sidebar .player-list li {
+    padding: 0.25rem 0.45rem;
+  }
+
+  .players-sidebar .player-list .player-avatar {
+    width: 24px;
+    height: 24px;
+    font-size: 0.65rem;
+  }
+
+  .players-sidebar .player-list .player-name {
+    max-width: 80px;
+    font-size: 0.75rem;
+  }
+}
+
+/* ===================== Phones (< 720px) ===================== */
+@media (max-width: 719px) {
+  /* Lobby screen keeps a little breathing room */
+  body {
+    padding: 1rem 0.75rem;
+  }
+
+  .game-title {
+    font-size: 1.7rem;
+  }
+
+  .sound-toggle {
+    width: 40px;
+    height: 40px;
+    font-size: 1rem;
+  }
+
+  .room-code {
+    font-size: 1.35rem;
+    letter-spacing: 3px;
+  }
+
+  .room-meta {
+    gap: 0.6rem;
+    flex-wrap: wrap;
+  }
+
+  .room-meta .timer {
+    font-size: 1.15rem;
+    min-width: 58px;
+  }
+
+  .room-meta .game-info {
+    font-size: 0.82rem;
+  }
+
+  /* Hide the app title bar during play — every pixel goes to the canvas */
+  body:has(#room-view:not(.hidden))[data-game-status="PLAYING"] .title-bar {
+    display: none;
+  }
+
+  /* Cheer chips give way to the guess input while playing */
+  body[data-game-status="PLAYING"] .quick-phrases {
+    display: none;
+  }
+
+  /* In-game scores on phones: the leaderboard collapses to a slim
+     horizontally-scrollable strip (avatar + name + score + ✓) while
+     playing, so scores stay visible without costing the canvas much.
+     It returns to the full panel in the lobby / round end. */
+  body[data-game-status="PLAYING"] .players-sidebar {
+    display: flex;
+    align-items: center;
+    gap: 0.4rem;
+    padding: 0.3rem 0.5rem;
+    background: rgba(20, 16, 38, 0.55);
+    border: 1px solid var(--panel-border);
+    border-radius: 10px;
+    flex: 0 0 auto;
+  }
+
+  body[data-game-status="PLAYING"] .players-area {
+    flex: 1 1 auto;
+    min-width: 0;
+  }
+
+  body[data-game-status="PLAYING"] .players-area h3 {
+    display: none;
+  }
+
+  body[data-game-status="PLAYING"] .player-list {
+    flex-direction: row;
+    flex-wrap: nowrap;
+    overflow-x: auto;
+    gap: 0.35rem;
+    scrollbar-width: none; /* keep the strip slim — chips still scroll by touch */
+  }
+
+  body[data-game-status="PLAYING"] .player-list::-webkit-scrollbar {
+    display: none;
+  }
+
+  body[data-game-status="PLAYING"] .player-list li {
+    flex: 0 0 auto;
+    padding: 0.2rem 0.45rem;
+    gap: 0.3rem;
+  }
+
+  body[data-game-status="PLAYING"] .player-list .player-avatar {
+    width: 24px;
+    height: 24px;
+    font-size: 0.65rem;
+  }
+
+  body[data-game-status="PLAYING"] .player-list .player-name {
+    font-size: 0.75rem;
+    max-width: 70px;
+  }
+
+  body[data-game-status="PLAYING"] .player-list .player-score {
+    font-size: 0.68rem;
+  }
+
+  body[data-game-status="PLAYING"] .player-list .leader-badge {
+    display: none;
+  }
+
+  body[data-game-status="PLAYING"] .leave-btn {
+    flex: 0 0 auto;
+    width: auto;
+    margin-top: 0;
+    padding: 0.35rem 0.6rem;
+    min-height: 34px;
+    white-space: nowrap;
+  }
+
+  /* Comfortable touch targets */
+  .btn {
+    min-height: 46px;
+  }
+
+  .canvas-toolbar .btn-small {
+    min-height: 44px;
+    padding: 0.6rem 0.95rem;
+    font-size: 0.9rem;
+  }
+
+  .word-option {
+    font-size: 1.05rem;
+    padding: 0.7rem 1.15rem;
+  }
+
+  .chat-input-row input {
+    min-height: 46px;
+    font-size: 1rem;
+  }
+
+  .chat-input-row .btn {
+    min-height: 46px;
+  }
+
+  .modal-panel {
+    padding: 1.4rem 1.1rem;
+    max-height: 90vh;
+    overflow-y: auto;
+  }
+
+  .player-list .player-avatar {
+    width: 32px;
+    height: 32px;
+  }
+}
+
+/* ---- Phone portrait: canvas-first stacked layout ----
+   Header/timer -> word -> CANVAS -> drawing controls -> chat -> input.
+   Everything fits the viewport; only the chat scrolls internally. */
+@media (max-width: 719px) and (orientation: portrait) {
+  body:has(#room-view:not(.hidden)) .room-panel {
+    padding: 0.55rem 0.6rem calc(0.55rem + env(safe-area-inset-bottom));
+    border-radius: 0;
+  }
+
+  body:has(#room-view:not(.hidden)) .room-header {
+    flex-wrap: wrap;
+    gap: 0.4rem;
+    margin-bottom: 0.35rem;
+  }
+
+  .room-code {
+    font-size: 1.15rem;
+    letter-spacing: 2px;
+  }
+
+  .room-meta .timer {
+    font-size: 1rem;
+    min-width: 46px;
+  }
+
+  .room-meta .game-info {
+    font-size: 0.72rem;
+  }
+
+  .room-layout {
+    flex: 1 1 auto;
+    min-height: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 0.45rem;
+    overflow-y: auto;
+  }
+
+  /* Players: full panel in lobby / round-end only (hidden while playing) */
+  .players-sidebar {
+    flex: 0 0 auto;
+    order: 1;
+  }
+
+  /* Canvas: biggest element of the screen */
+  .canvas-area {
+    flex: 1 1 auto;
+    order: 2;
+    gap: 0.35rem;
+  }
+
+  #word-banner {
+    min-height: 2.3rem;
+    padding: 0.4rem 0.7rem;
+    font-size: 0.95rem;
+    margin-bottom: 0;
+  }
+
+  .canvas-stage {
+    order: 2;
+  }
+
+  .canvas-toolbar {
+    order: 3;
+    flex: 0 0 auto;
+    gap: 0.45rem;
+    padding: 0.45rem 0.5rem;
+    margin-bottom: 0;
+  }
+
+  .canvas-toolbar .tool span {
+    display: none;
+  }
+
+  .palette {
+    flex-wrap: nowrap;
+    overflow-x: auto;
+  }
+
+  .palette .swatch {
+    width: 26px;
+    height: 26px;
+    flex-shrink: 0;
+  }
+
+  #brush-size-input {
+    width: 72px;
+  }
+
+  /* Chat: fixed flexible height (~23% of viewport), internal scroll,
+     guess input + SEND pinned directly below the messages */
+  .chat-sidebar {
+    flex: 0 0 auto;
+    order: 4;
+    height: clamp(110px, 23dvh, 225px);
+  }
+
+  .chat-panel {
+    height: 100%;
+    padding: 0.55rem 0.65rem;
+  }
+
+  .quick-phrases {
+    flex-wrap: nowrap;
+    overflow-x: auto;
+  }
+}
+
+/* ---- Short landscape phones (height < 500px) ----
+   Vertical space is precious, so the word banner + timer float over the
+   top of the canvas. The leaderboard becomes an extra-slim score strip so
+   scores stay visible without stealing the drawing surface. */
+@media (max-width: 1099px) and (orientation: landscape) and (max-height: 500px) {
+  body[data-game-status="PLAYING"] .players-sidebar {
+    padding: 0.2rem 0.45rem;
+    gap: 0.35rem;
+  }
+
+  body[data-game-status="PLAYING"] .player-list li {
+    padding: 0.15rem 0.35rem;
+  }
+
+  body[data-game-status="PLAYING"] .player-list .player-avatar {
+    width: 22px;
+    height: 22px;
+    font-size: 0.6rem;
+  }
+
+  body[data-game-status="PLAYING"] .player-list .player-name {
+    font-size: 0.7rem;
+    max-width: 60px;
+  }
+
+  body[data-game-status="PLAYING"] .leave-btn {
+    padding: 0.25rem 0.5rem;
+    min-height: 30px;
+  }
+
+  .canvas-area {
+    position: relative;
+  }
+
+  .canvas-area #word-banner {
+    position: absolute;
+    top: 0;
+    left: 50%;
+    transform: translateX(-50%);
+    z-index: 3;
+    margin: 0;
+    min-height: 0;
+    padding: 0.3rem 0.9rem;
+    font-size: 0.88rem;
+    border-radius: 999px;
+    max-width: 92%;
+    box-shadow: 0 4px 14px rgba(0, 0, 0, 0.35);
+  }
+
+  .canvas-area .timer-bar {
+    position: absolute;
+    top: 2.15rem;
+    left: 0.4rem;
+    right: 0.4rem;
+    z-index: 3;
+    margin: 0;
+  }
+
+  .canvas-toolbar .palette {
+    max-width: 240px;
+  }
+
+  .canvas-toolbar .tool,
+  .canvas-toolbar .btn-small {
+    flex: 0 0 auto;
   }
 }
