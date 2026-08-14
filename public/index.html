@@ -1,0 +1,122 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Draw &amp; Guess</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Nunito:wght@400;600;700;800;900&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="style.css" />
+</head>
+<body>
+  <div class="app">
+    <header class="title-bar">
+      <button id="sound-toggle-btn" class="sound-toggle" title="Toggle sounds">🔊</button>
+      <h1 class="game-title">🎨 Draw &amp; Guess</h1>
+      <p class="tagline">Real-time multiplayer drawing game</p>
+    </header>
+
+    <!-- Lobby / landing screen -->
+    <section id="lobby" class="panel lobby-panel">
+      <h2>Join the game</h2>
+
+      <label class="field">
+        <span>Username</span>
+        <input id="username-input" type="text" placeholder="e.g. Picasso" maxlength="20" autocomplete="off" />
+      </label>
+
+      <button id="create-room-btn" class="btn btn-primary">Create Room</button>
+
+      <div class="divider"><span>or</span></div>
+
+      <label class="field">
+        <span>Room code</span>
+        <input id="room-code-input" type="text" placeholder="e.g. ABC123" maxlength="6" autocomplete="off" />
+      </label>
+
+      <button id="join-room-btn" class="btn">Join Room</button>
+
+      <p id="lobby-error" class="error hidden"></p>
+    </section>
+
+    <!-- In-room screen -->
+    <section id="room-view" class="panel room-panel hidden">
+      <div class="room-header">
+        <div class="room-code-box">
+          <span class="room-code-label">Room code</span>
+          <span id="room-code" class="room-code">------</span>
+        </div>
+        <div class="room-meta">
+          <span id="round-display" class="game-info">Round —</span>
+          <span id="timer-display" class="timer">—</span>
+          <span id="player-count" class="game-info">0 / 5 players</span>
+        </div>
+      </div>
+
+      <div class="room-layout">
+        <!-- Players -->
+        <aside class="players-sidebar">
+          <div class="players-area">
+            <h3>Players</h3>
+            <ul id="player-list" class="player-list"></ul>
+          </div>
+          <div class="category-box">
+            <h3>Category</h3>
+            <select id="category-select" class="category-select hidden"></select>
+            <p id="category-display" class="category-display">🔒 No category selected yet</p>
+          </div>
+          <button id="start-game-btn" class="btn btn-primary hidden">Start Game</button>
+          <p id="start-error" class="error hidden"></p>
+          <button id="leave-room-btn" class="btn leave-btn">🚪 Leave Room</button>
+          <p class="room-note">2–5 players. Each player draws one word per round.</p>
+        </aside>
+
+        <!-- Drawing area -->
+        <div class="canvas-area">
+          <div id="word-banner" class="word-banner">Waiting for the game to start…</div>
+          <div id="timer-bar" class="timer-bar"><div id="timer-fill" class="timer-fill"></div></div>
+
+          <div class="canvas-toolbar">
+            <div id="color-palette" class="palette"></div>
+            <label class="tool">
+              <span>Size</span>
+              <input id="brush-size-input" type="range" min="1" max="30" value="4" />
+            </label>
+            <button id="eraser-btn" class="btn btn-small" title="Erase (draw white)">🧽 Eraser</button>
+            <button id="clear-canvas-btn" class="btn btn-small">Clear</button>
+          </div>
+
+          <canvas id="drawing-canvas" width="800" height="500"></canvas>
+        </div>
+
+        <!-- Chat -->
+        <aside class="chat-sidebar">
+          <div class="chat-panel">
+            <h3>Chat</h3>
+            <div id="chat-messages" class="chat-messages"></div>
+            <div id="quick-phrases" class="quick-phrases"></div>
+            <div class="chat-input-row">
+              <input id="chat-input" type="text" placeholder="Type your guess…" maxlength="200" autocomplete="off" />
+              <button id="chat-send-btn" class="btn btn-small">Send</button>
+            </div>
+          </div>
+        </aside>
+      </div>
+    </section>
+    <!-- Scoreboard modal (game over) -->
+    <div id="scoreboard-modal" class="modal hidden">
+      <div class="modal-panel">
+        <h2 class="modal-title">🏁 Game Over!</h2>
+        <p id="winner-text" class="winner-text"></p>
+        <ol id="scoreboard-list" class="scoreboard-list"></ol>
+        <button id="play-again-btn" class="btn btn-primary hidden">Play Again</button>
+        <p id="waiting-text" class="waiting-text hidden">Waiting for the leader to start a new game…</p>
+      </div>
+    </div>
+  </div>
+
+  <script src="/socket.io/socket.io.js"></script>
+  <script src="script.js"></script>
+</body>
+</html>

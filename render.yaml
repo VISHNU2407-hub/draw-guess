@@ -1,0 +1,12 @@
+# Render Blueprint — deploy this repo as a Web Service with no manual config.
+services:
+  - type: web
+    name: draw-and-guess
+    runtime: node
+    plan: free
+    buildCommand: npm install
+    startCommand: npm start
+    healthCheckPath: /health
+    envVars:
+      - key: NODE_VERSION
+        value: "20"
