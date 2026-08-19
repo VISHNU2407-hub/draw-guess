@@ -17,95 +17,182 @@
       <p class="tagline">Real-time multiplayer drawing game</p>
     </header>
 
-    <!-- Lobby / landing screen -->
+    <!-- ===================== STATE 1: LOBBY ===================== -->
     <section id="lobby" class="panel lobby-panel">
       <h2>Join the game</h2>
-
       <label class="field">
         <span>Username</span>
         <input id="username-input" type="text" placeholder="e.g. Picasso" maxlength="20" autocomplete="off" />
       </label>
-
       <button id="create-room-btn" class="btn btn-primary">Create Room</button>
-
       <div class="divider"><span>or</span></div>
-
       <label class="field">
         <span>Room code</span>
         <input id="room-code-input" type="text" placeholder="e.g. ABC123" maxlength="6" autocomplete="off" />
       </label>
-
       <button id="join-room-btn" class="btn">Join Room</button>
-
       <p id="lobby-error" class="error hidden"></p>
     </section>
 
-    <!-- In-room screen -->
-    <section id="room-view" class="panel room-panel hidden">
-      <div class="room-header">
-        <div class="room-code-box">
-          <span class="room-code-label">Room code</span>
-          <span id="room-code" class="room-code">------</span>
+    <!-- ===================== IN-ROOM VIEW ===================== -->
+    <section id="room-view" class="hidden">
+
+      <!-- ---- STATE 1: LOBBY (pre-game) ---- -->
+      <div id="room-lobby" class="room-lobby">
+        <div class="room-header">
+          <div class="room-code-box">
+            <span class="room-code-label">Room code</span>
+            <div class="room-code-row">
+              <span id="room-code" class="room-code">------</span>
+              <button id="invite-btn" class="btn btn-small invite-btn" title="Copy invite link">Invite</button>
+            </div>
+          </div>
+          <div class="room-meta">
+            <span id="player-count" class="game-info">0 / 5 players</span>
+          </div>
         </div>
-        <div class="room-meta">
-          <span id="round-display" class="game-info">Round —</span>
-          <span id="timer-display" class="timer">—</span>
-          <span id="player-count" class="game-info">0 / 5 players</span>
+
+        <div class="room-layout">
+          <aside class="players-sidebar">
+            <div class="players-area">
+              <h3>Players</h3>
+              <ul id="player-list" class="player-list"></ul>
+            </div>
+            <div class="category-box">
+              <h3>Category</h3>
+              <select id="category-select" class="category-select hidden"></select>
+              <p id="category-display" class="category-display">🔒 No category selected yet</p>
+            </div>
+            <div class="rounds-box">
+              <h3>Rounds</h3>
+              <select id="rounds-select" class="category-select hidden">
+                <option value="3">3 Rounds</option>
+                <option value="4">4 Rounds</option>
+                <option value="5" selected>5 Rounds</option>
+                <option value="6">6 Rounds</option>
+                <option value="7">7 Rounds</option>
+                <option value="8">8 Rounds</option>
+                <option value="9">9 Rounds</option>
+              </select>
+              <p id="rounds-display" class="category-display">5 Rounds</p>
+            </div>
+            <button id="start-game-btn" class="btn btn-primary hidden">Start Game</button>
+            <p id="start-error" class="error hidden"></p>
+            <button id="leave-room-btn" class="btn leave-btn">🚪 Leave Room</button>
+            <p class="room-note">2–5 players. Each player draws one word per round.</p>
+          </aside>
+
+          <div class="lobby-center">
+            <div class="lobby-welcome">
+              <h2>Waiting for host to start…</h2>
+              <p>Chat with other players while you wait.</p>
+            </div>
+            <div class="chat-panel lobby-chat">
+              <h3>Chat</h3>
+              <div id="chat-messages-lobby" class="chat-messages"></div>
+              <div class="chat-input-row">
+                <input id="chat-input-lobby" type="text" placeholder="Type a message…" maxlength="200" autocomplete="off" />
+                <button id="chat-send-btn-lobby" class="btn btn-small">Send</button>
+              </div>
+            </div>
+          </div>
         </div>
       </div>
 
-      <div class="room-layout">
-        <!-- Players -->
-        <aside class="players-sidebar">
-          <div class="players-area">
-            <h3>Players</h3>
-            <ul id="player-list" class="player-list"></ul>
+      <!-- ---- STATE 2: FULL-SCREEN GAME ---- -->
+      <div id="room-game" class="room-game hidden">
+
+        <!-- Left Sidebar -->
+        <aside id="game-sidebar" class="game-sidebar">
+          <button id="sidebar-toggle-btn" class="sidebar-toggle-btn" title="Collapse sidebar">◀</button>
+          <div class="sidebar-content">
+            <div class="sidebar-section">
+              <div class="sidebar-label">ROOM CODE</div>
+              <div class="sidebar-room-code" id="sidebar-room-code">------</div>
+              <button id="sidebar-invite-btn" class="btn btn-small invite-btn sidebar-invite-btn">Invite</button>
+            </div>
+            <div class="sidebar-section">
+              <div class="sidebar-label">PLAYERS (<span id="sidebar-player-count">0 / 5</span>)</div>
+              <ul id="sidebar-player-list" class="sidebar-player-list"></ul>
+            </div>
+            <div class="sidebar-section">
+              <div class="sidebar-label">CATEGORY</div>
+              <div id="sidebar-category" class="sidebar-category">🔒 None</div>
+            </div>
+            <button id="sidebar-leave-btn" class="btn leave-btn sidebar-leave-btn">🚪 Leave Room</button>
+            <p class="sidebar-note">2–5 players. Each player draws one word per round.</p>
           </div>
-          <div class="category-box">
-            <h3>Category</h3>
-            <select id="category-select" class="category-select hidden"></select>
-            <p id="category-display" class="category-display">🔒 No category selected yet</p>
-          </div>
-          <button id="start-game-btn" class="btn btn-primary hidden">Start Game</button>
-          <p id="start-error" class="error hidden"></p>
-          <button id="leave-room-btn" class="btn leave-btn">🚪 Leave Room</button>
-          <p class="room-note">2–5 players. Each player draws one word per round.</p>
         </aside>
 
-        <!-- Drawing area -->
-        <div class="canvas-area">
-          <div id="word-banner" class="word-banner">Waiting for the game to start…</div>
-          <div id="timer-bar" class="timer-bar"><div id="timer-fill" class="timer-fill"></div></div>
+        <!-- Center: Canvas Area -->
+        <div class="game-center">
+          <div class="game-header">
+            <span id="game-round" class="game-round-info">Round 1 / 3</span>
+            <div class="game-word-info">
+              <span id="game-word-display" class="game-word-label">Word: -----</span>
+              <span id="game-timer" class="game-timer">—</span>
+            </div>
+            <span id="game-drawer" class="game-drawer-info">Drawer: —</span>
+            <div class="game-reactions">
+              <button id="react-thumbsup" class="reaction-btn" title="Thumbs up">👍 <span id="reaction-thumbsup-count">0</span></button>
+              <button id="react-heart" class="reaction-btn" title="Love">❤️ <span id="reaction-heart-count">0</span></button>
+            </div>
+          </div>
+
+          <div id="game-word-banner" class="game-word-banner">Waiting for the game to start…</div>
+          <div id="game-timer-bar" class="timer-bar"><div id="game-timer-fill" class="timer-fill"></div></div>
 
           <div class="canvas-toolbar">
-            <div id="color-palette" class="palette"></div>
-            <label class="tool">
-              <span>Size</span>
-              <input id="brush-size-input" type="range" min="1" max="30" value="4" />
-            </label>
-            <button id="eraser-btn" class="btn btn-small" title="Erase (draw white)">🧽 Eraser</button>
-            <button id="clear-canvas-btn" class="btn btn-small">Clear</button>
+            <div class="tool-dropdown" id="colors-dropdown">
+              <button class="tool-dropdown-btn" id="colors-toggle">Colors ▼</button>
+              <div class="tool-dropdown-panel" id="colors-panel">
+                <div id="color-palette-game" class="palette"></div>
+              </div>
+            </div>
+            <span id="color-indicator" class="color-indicator" title="Current color"></span>
+            <div class="tool-dropdown" id="shapes-dropdown">
+              <button class="tool-dropdown-btn" id="shapes-toggle">Shapes ▼</button>
+              <div class="tool-dropdown-panel" id="shapes-panel">
+                <div class="shapes-grid">
+                  <button class="shape-btn active" data-shape="freehand" title="Freehand">✏️</button>
+                  <button class="shape-btn" data-shape="line" title="Line">╱</button>
+                  <button class="shape-btn" data-shape="rect" title="Rectangle">▭</button>
+                  <button class="shape-btn" data-shape="circle" title="Circle">◯</button>
+                </div>
+              </div>
+            </div>
+            <button id="eraser-btn-game" class="btn btn-small eraser-btn" title="Eraser">🧽 Eraser</button>
+            <button id="undo-btn-game" class="btn btn-small" title="Undo last action">↶ Undo</button>
+            <button id="fill-btn-game" class="btn btn-small fill-btn" title="Fill area">🪣 Fill</button>
+            <button id="clear-canvas-btn-game" class="btn btn-small">Clear</button>
+            <div class="toolbar-separator"></div>
+            <span class="size-label">Size</span>
+            <button id="brush-size-down" class="size-adj-btn">−</button>
+            <input id="brush-size-input-game" type="range" min="1" max="30" value="4" />
+            <button id="brush-size-up" class="size-adj-btn">+</button>
           </div>
 
           <div class="canvas-stage" id="canvas-stage">
             <canvas id="drawing-canvas" width="800" height="500"></canvas>
+            <canvas id="shape-preview-canvas" width="800" height="500"></canvas>
           </div>
         </div>
 
-        <!-- Chat -->
-        <aside class="chat-sidebar">
+        <!-- Right: Chat -->
+        <aside class="game-chat">
           <div class="chat-panel">
             <h3>Chat</h3>
-            <div id="chat-messages" class="chat-messages"></div>
-            <div id="quick-phrases" class="quick-phrases"></div>
+            <div id="chat-messages-game" class="chat-messages"></div>
             <div class="chat-input-row">
-              <input id="chat-input" type="text" placeholder="Type your guess…" maxlength="200" autocomplete="off" />
-              <button id="chat-send-btn" class="btn btn-small">Send</button>
+              <input id="chat-input-game" type="text" placeholder="Type your guess…" maxlength="200" autocomplete="off" />
+              <button id="chat-send-btn-game" class="btn btn-small">Send</button>
             </div>
           </div>
         </aside>
       </div>
+
     </section>
+
     <!-- Scoreboard modal (game over) -->
     <div id="scoreboard-modal" class="modal hidden">
       <div class="modal-panel">

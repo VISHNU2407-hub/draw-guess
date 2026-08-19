@@ -35,8 +35,12 @@ app.get("/health", (req, res) => {
   res.json({ status: "ok" });
 });
 
-// Unknown routes -> simple JSON 404 (no stack traces to clients)
+// Unknown routes -> serve index.html for browser requests (SPA-style),
+// JSON 404 for everything else.
 app.use((req, res) => {
+  if (req.method === "GET" && req.accepts("html")) {
+    return res.sendFile(path.join(__dirname, "public", "index.html"));
+  }
   res.status(404).json({ error: "Not found" });
 });
 
@@ -53,7 +57,7 @@ process.on("unhandledRejection", (reason) => {
 // ---------------------------------------------------------------------------
 // Rooms
 // ---------------------------------------------------------------------------
-const MAX_PLAYERS = 5;
+const MAX_PLAYERS = 9;
 const MIN_PLAYERS_TO_START = 2;
 const TURN_DURATION = Number(process.env.TURN_DURATION) || 60; // seconds per turn
 const TOTAL_ROUNDS = Number(process.env.TOTAL_ROUNDS) || 3; // rounds per game
@@ -95,6 +99,7 @@ function createRoom(roomId) {
     correctGuesses: new Set(),
     strokeLog: [], // recent stroke entries, replayed to late joiners
     round: 0, // current round number (0 = not started)
+    numRounds: TOTAL_ROUNDS, // rounds per game (leader can change before start)
     turnOrder: [], // snapshot of player socketIds for the current round
     turnIndex: 0, // index into turnOrder
     chatLog: [], // recent chat entries, replayed to late joiners
@@ -102,6 +107,7 @@ function createRoom(roomId) {
     usedWords: new Set(), // every word ever offered this game (offered = used)
     wordOptions: [], // the words currently offered to the drawer
     phase: "idle", // "idle" | "choosing" | "drawing"
+    reactions: { thumbsup: 0, heart: 0 }, // reaction counters
   };
 }
 
@@ -152,7 +158,7 @@ function getRoomSnapshot(room) {
     gameStatus: room.gameStatus,
     turnTimer: room.turnTimer,
     round: room.round,
-    totalRounds: TOTAL_ROUNDS,
+    totalRounds: room.numRounds || TOTAL_ROUNDS,
     correctGuessers: Array.from(room.correctGuesses),
     selectedCategory: room.selectedCategory,
     phase: room.phase, // "idle" | "choosing" | "drawing" (so late joiners see the right banner)
@@ -245,6 +251,7 @@ function startGame(roomId) {
   room.wordOptions = [];
   room.phase = "idle";
   room.correctGuesses = new Set();
+  room.reactions = { thumbsup: 0, heart: 0 };
 
   systemMessage(roomId, `🎮 Game started! Round ${room.round} — ${room.players.length} players. Category: ${room.selectedCategory}.`);
   console.log(`[GAME] Game started in room ${roomId} — round ${room.round} (${room.players.length} players, category ${room.selectedCategory})`);
@@ -417,7 +424,7 @@ function endRound(roomId) {
   room.turnTimer = 0;
 
   // Final round — the game is over, announce the winner(s)
-  if (room.round >= TOTAL_ROUNDS) {
+  if (room.round >= (room.numRounds || TOTAL_ROUNDS)) {
     finishGame(roomId, "final_round");
     return;
   }
@@ -541,7 +548,7 @@ io.on("connection", (socket) => {
   });
 
   // START GAME — leader only; starts a game or the next round
-  socket.on("start_game", () => {
+  socket.on("start_game", (data) => {
     const roomId = socket.data.roomId;
     const room = roomId && rooms[roomId];
     if (!room) return;
@@ -554,8 +561,12 @@ io.on("connection", (socket) => {
       return;
     }
     if (!room.selectedCategory) {
-      socket.emit("error", { message: "Please select a category before starting." });
-      return;
+      const cats = Object.keys(CATEGORIES);
+      room.selectedCategory = cats[Math.floor(Math.random() * cats.length)];
+      systemMessage(roomId, `🎲 No category chosen — randomly selected ${room.selectedCategory}.`);
+    }
+    if (data && data.numRounds) {
+      room.numRounds = Math.min(9, Math.max(3, Number(data.numRounds) || 5));
     }
     startGame(roomId);
   });
@@ -608,6 +619,13 @@ io.on("connection", (socket) => {
     ) {
       return;
     }
+    // For shapes, also validate x2/y2
+    if (data.shape && data.shape !== "freehand" && data.shape !== "fill") {
+      if (typeof data.x2 !== "number" || !isFinite(data.x2) ||
+          typeof data.y2 !== "number" || !isFinite(data.y2)) {
+        return;
+      }
+    }
     const payload = {
       socketId: socket.id,
       x: data.x,
@@ -615,6 +633,14 @@ io.on("connection", (socket) => {
       color: data.color,
       lineWidth: data.lineWidth,
     };
+    // Relay shape data for non-freehand drawing tools
+    if (data.shape && data.shape !== "freehand") {
+      payload.shape = data.shape;
+      if (data.shape !== "fill") {
+        payload.x2 = data.x2;
+        payload.y2 = data.y2;
+      }
+    }
     logStroke(roomId, { type: "start", ...payload });
     socket.broadcast.to(roomId).emit("draw_start", payload);
   });
@@ -693,6 +719,20 @@ io.on("connection", (socket) => {
 
     addChatEntry(roomId, { socketId: socket.id, username: player.username, message });
     console.log(`[CHAT] ${roomId} ${player.username}: ${message}`);
+  });
+
+  // REACTION — client sends { type: "thumbsup" | "heart" }
+  socket.on("reaction", (data) => {
+    const roomId = socket.data.roomId;
+    const room = roomId && rooms[roomId];
+    if (!room) return;
+    const type = data && data.type;
+    if (type !== "thumbsup" && type !== "heart") return;
+
+    // Increment a simple counter on the room
+    if (!room.reactions) room.reactions = { thumbsup: 0, heart: 0 };
+    room.reactions[type] = (room.reactions[type] || 0) + 1;
+    io.to(roomId).emit("reaction", { type, count: room.reactions[type] });
   });
 
   // LEAVE ROOM — client sends {} (voluntary exit, socket stays connected)

@@ -18,9 +18,7 @@
   --gold: #f7b731;
 }
 
-html {
-  color-scheme: dark;
-}
+html { color-scheme: dark; }
 
 body {
   font-family: "Nunito", "Segoe UI", system-ui, -apple-system, sans-serif;
@@ -35,9 +33,7 @@ body {
   overflow-x: hidden;
 }
 
-/* Floating ambient blobs */
-body::before,
-body::after {
+body::before, body::after {
   content: "";
   position: fixed;
   width: 520px;
@@ -48,29 +44,39 @@ body::after {
   z-index: -1;
   pointer-events: none;
 }
-
 body::before {
   background: #6c5ce7;
   top: -160px;
   left: -120px;
   animation: drift 26s ease-in-out infinite alternate;
 }
-
 body::after {
   background: #e84393;
   bottom: -180px;
   right: -140px;
   animation: drift 32s ease-in-out infinite alternate-reverse;
 }
-
 @keyframes drift {
   from { transform: translate(0, 0) scale(1); }
   to { transform: translate(60px, 40px) scale(1.15); }
 }
 
-.app {
-  width: 100%;
-  max-width: 1100px;
+.app { width: 100%; max-width: 1100px; }
+
+/* Full-screen game mode: remove all constraints */
+body:has(#room-game:not(.hidden)) {
+  padding: 0;
+  overflow: hidden;
+}
+body:has(#room-game:not(.hidden)) .app {
+  max-width: none;
+  height: 100vh;
+  height: 100dvh;
+  display: flex;
+  flex-direction: column;
+}
+body:has(#room-game:not(.hidden)) .title-bar {
+  display: none;
 }
 
 /* ---- Header ---- */
@@ -79,7 +85,6 @@ body::after {
   text-align: center;
   margin-bottom: 1.5rem;
 }
-
 .sound-toggle {
   position: absolute;
   top: 0;
@@ -94,12 +99,10 @@ body::after {
   cursor: pointer;
   transition: transform 0.15s, box-shadow 0.15s;
 }
-
 .sound-toggle:hover {
   transform: scale(1.1);
   box-shadow: 0 0 18px rgba(124, 111, 240, 0.35);
 }
-
 .game-title {
   font-size: 2.4rem;
   font-weight: 900;
@@ -110,12 +113,10 @@ body::after {
   -webkit-text-fill-color: transparent;
   animation: glow 4s ease-in-out infinite;
 }
-
 @keyframes glow {
   0%, 100% { filter: drop-shadow(0 0 6px rgba(124, 111, 240, 0.25)); }
   50% { filter: drop-shadow(0 0 18px rgba(124, 111, 240, 0.55)); }
 }
-
 .tagline {
   color: var(--muted);
   margin-top: 0.25rem;
@@ -131,10 +132,7 @@ body::after {
   backdrop-filter: blur(14px);
   box-shadow: 0 12px 40px rgba(0, 0, 0, 0.35), inset 0 1px 0 rgba(255, 255, 255, 0.06);
 }
-
-.hidden {
-  display: none !important;
-}
+.hidden { display: none !important; }
 
 /* ---- Lobby ---- */
 .lobby-panel {
@@ -142,17 +140,11 @@ body::after {
   margin: 0 auto;
   animation: rise 0.4s ease-out;
 }
-
 @keyframes rise {
   from { opacity: 0; transform: translateY(12px); }
   to { opacity: 1; transform: translateY(0); }
 }
-
-.field {
-  display: block;
-  margin-bottom: 1rem;
-}
-
+.field { display: block; margin-bottom: 1rem; }
 .field span {
   display: block;
   font-size: 0.8rem;
@@ -162,7 +154,6 @@ body::after {
   letter-spacing: 1px;
   margin-bottom: 0.35rem;
 }
-
 .field input {
   width: 100%;
   padding: 0.75rem 0.9rem;
@@ -175,15 +166,11 @@ body::after {
   outline: none;
   transition: border-color 0.15s, box-shadow 0.15s;
 }
-
 .field input:focus {
   border-color: var(--accent);
   box-shadow: 0 0 0 3px rgba(124, 111, 240, 0.22);
 }
-
-.field input::placeholder {
-  color: #6a6390;
-}
+.field input::placeholder { color: #6a6390; }
 
 /* ---- Buttons ---- */
 .btn {
@@ -200,34 +187,26 @@ body::after {
   cursor: pointer;
   transition: transform 0.12s, box-shadow 0.12s, background 0.12s;
 }
-
 .btn:hover {
   background: rgba(255, 255, 255, 0.12);
   transform: translateY(-1px);
 }
-
-.btn:active {
-  transform: translateY(1px);
-}
-
+.btn:active { transform: translateY(1px); }
 .btn-primary {
   background: linear-gradient(135deg, var(--accent), var(--accent-2));
   border: none;
   box-shadow: 0 6px 18px rgba(91, 75, 214, 0.4);
 }
-
 .btn-primary:hover {
   background: linear-gradient(135deg, #8d80f7, #6454e0);
   box-shadow: 0 8px 24px rgba(91, 75, 214, 0.55);
 }
-
 .btn-small {
   width: auto;
   padding: 0.45rem 0.85rem;
   font-size: 0.82rem;
   white-space: nowrap;
 }
-
 .divider {
   display: flex;
   align-items: center;
@@ -239,16 +218,13 @@ body::after {
   text-transform: uppercase;
   letter-spacing: 1px;
 }
-
-.divider::before,
-.divider::after {
+.divider::before, .divider::after {
   content: "";
   flex: 1;
   height: 1px;
   background: linear-gradient(90deg, transparent, var(--panel-border), transparent);
 }
 
-/* ---- Errors ---- */
 .error {
   margin-top: 1rem;
   color: var(--danger);
@@ -257,19 +233,32 @@ body::after {
   text-align: center;
 }
 
-/* ---- Room header ---- */
+/* ---- Invite Button ---- */
+.invite-btn {
+  background: rgba(124, 111, 240, 0.18);
+  border: 1px solid rgba(124, 111, 240, 0.4);
+  color: #c9bfff;
+  font-weight: 800;
+}
+.invite-btn:hover {
+  background: rgba(124, 111, 240, 0.35);
+  color: #fff;
+}
+
+/* ============================================
+   ROOM LOBBY (State 1 — pre-game in-room)
+   ============================================ */
+.room-lobby {
+  animation: rise 0.3s ease-out;
+}
+
 .room-header {
   display: flex;
   justify-content: space-between;
   align-items: center;
   margin-bottom: 1.25rem;
 }
-
-.room-code-box {
-  display: flex;
-  flex-direction: column;
-}
-
+.room-code-box { display: flex; flex-direction: column; }
 .room-code-label {
   font-size: 0.7rem;
   font-weight: 800;
@@ -277,7 +266,11 @@ body::after {
   text-transform: uppercase;
   letter-spacing: 1.5px;
 }
-
+.room-code-row {
+  display: flex;
+  align-items: center;
+  gap: 0.7rem;
+}
 .room-code {
   font-size: 1.7rem;
   font-weight: 900;
@@ -288,52 +281,27 @@ body::after {
   background-clip: text;
   -webkit-text-fill-color: transparent;
 }
-
 .room-meta {
   display: flex;
   align-items: center;
   gap: 1.25rem;
 }
-
 .room-meta .game-info {
   font-size: 0.9rem;
   font-weight: 700;
   color: var(--muted);
 }
 
-.room-meta .timer {
-  font-size: 1.45rem;
-  font-weight: 900;
-  font-variant-numeric: tabular-nums;
-  color: var(--text);
-  min-width: 80px;
-  text-align: center;
-}
-
-.room-meta .timer.low {
-  color: var(--danger);
-  animation: pulse 1s infinite;
-}
-
-@keyframes pulse {
-  0%, 100% { opacity: 1; }
-  50% { opacity: 0.45; }
-}
-
-/* ---- Room layout: players | canvas | chat ---- */
+/* Room lobby layout */
 .room-layout {
   display: grid;
-  grid-template-columns: 210px minmax(0, 1fr) 300px;
+  grid-template-columns: 210px minmax(0, 1fr);
   gap: 1.25rem;
   align-items: stretch;
 }
 
-/* Responsive gameplay layout rules (phones + tablets) live at the end
-   of this file so they override the base rules above. */
-
-/* ---- Players sidebar ---- */
-.players-area h3,
-.chat-panel h3 {
+.players-sidebar { display: flex; flex-direction: column; }
+.players-area h3, .chat-panel h3 {
   font-size: 0.78rem;
   font-weight: 800;
   color: var(--muted);
@@ -341,14 +309,12 @@ body::after {
   letter-spacing: 1.5px;
   margin-bottom: 0.6rem;
 }
-
 .player-list {
   list-style: none;
   display: flex;
   flex-direction: column;
   gap: 0.45rem;
 }
-
 .player-list li {
   display: flex;
   align-items: center;
@@ -359,13 +325,11 @@ body::after {
   border-radius: 10px;
   transition: border-color 0.15s, box-shadow 0.15s, transform 0.15s;
 }
-
 .player-list li.drawing {
   border-color: var(--accent);
   box-shadow: 0 0 14px rgba(124, 111, 240, 0.35);
   transform: scale(1.02);
 }
-
 .player-list .player-avatar {
   width: 28px;
   height: 28px;
@@ -379,7 +343,6 @@ body::after {
   flex-shrink: 0;
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.35);
 }
-
 .player-list .player-name {
   flex: 1;
   font-size: 0.9rem;
@@ -388,7 +351,6 @@ body::after {
   overflow: hidden;
   text-overflow: ellipsis;
 }
-
 .player-list .leader-badge {
   font-size: 0.6rem;
   font-weight: 900;
@@ -399,7 +361,6 @@ body::after {
   color: #3d2c00;
   white-space: nowrap;
 }
-
 .player-list .guess-badge {
   width: 20px;
   height: 20px;
@@ -414,12 +375,10 @@ body::after {
   flex-shrink: 0;
   animation: pop 0.3s ease-out;
 }
-
 @keyframes pop {
   from { transform: scale(0.3); }
   to { transform: scale(1); }
 }
-
 .player-list .player-score {
   font-size: 0.72rem;
   font-weight: 800;
@@ -427,11 +386,8 @@ body::after {
   white-space: nowrap;
 }
 
-#start-game-btn {
-  margin-top: 1rem;
-}
+#start-game-btn { margin-top: 1rem; }
 
-/* ---- Category selection ---- */
 .category-box {
   margin-top: 1.1rem;
   padding: 0.75rem 0.85rem;
@@ -439,7 +395,6 @@ body::after {
   border: 1px solid var(--panel-border);
   border-radius: 10px;
 }
-
 .category-box h3 {
   font-size: 0.78rem;
   font-weight: 800;
@@ -448,7 +403,6 @@ body::after {
   letter-spacing: 1.5px;
   margin-bottom: 0.5rem;
 }
-
 .category-select {
   width: 100%;
   padding: 0.55rem 0.7rem;
@@ -463,12 +417,10 @@ body::after {
   cursor: pointer;
   transition: border-color 0.15s, box-shadow 0.15s;
 }
-
 .category-select:focus {
   border-color: var(--accent);
   box-shadow: 0 0 0 3px rgba(124, 111, 240, 0.2);
 }
-
 .category-display {
   font-size: 0.92rem;
   font-weight: 800;
@@ -478,20 +430,54 @@ body::after {
   word-break: break-word;
 }
 
-.category-display .lock {
+.leave-btn {
+  margin-top: 0.6rem;
+  background: rgba(255, 107, 107, 0.12);
+  border: 1px solid rgba(255, 107, 107, 0.3);
+  color: #ff9c9c;
+}
+.leave-btn:hover {
+  background: rgba(255, 107, 107, 0.22);
+}
+.room-note {
+  margin-top: 1.25rem;
+  color: var(--muted);
   font-size: 0.8rem;
-  opacity: 0.7;
-  margin-left: 0.3rem;
+  text-align: center;
 }
 
-/* ---- Word choice (drawer picks from 3 options) ---- */
+/* Lobby center area (welcome + chat) */
+.lobby-center {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+.lobby-welcome {
+  background: rgba(20, 16, 38, 0.4);
+  border: 1px solid var(--panel-border);
+  border-radius: 12px;
+  padding: 2rem;
+  text-align: center;
+}
+.lobby-welcome h2 {
+  font-size: 1.3rem;
+  font-weight: 800;
+  color: var(--accent);
+  margin-bottom: 0.4rem;
+}
+.lobby-welcome p {
+  color: var(--muted);
+  font-size: 0.9rem;
+}
+.lobby-chat { flex: 1; min-height: 0; }
+
+/* Word options */
 .word-options {
   display: flex;
   flex-wrap: wrap;
   gap: 0.5rem;
   justify-content: center;
 }
-
 .word-option {
   font-family: inherit;
   font-size: 1rem;
@@ -505,74 +491,317 @@ body::after {
   cursor: pointer;
   transition: transform 0.12s, box-shadow 0.12s, border-color 0.12s;
 }
-
 .word-option:hover {
   transform: translateY(-2px);
   border-color: var(--accent);
   box-shadow: 0 6px 16px rgba(124, 111, 240, 0.4);
 }
 
-.leave-btn {
-  margin-top: 0.6rem;
-  background: rgba(255, 107, 107, 0.12);
-  border: 1px solid rgba(255, 107, 107, 0.3);
-  color: #ff9c9c;
+/* ============================================
+   FULL-SCREEN GAME (State 2)
+   ============================================ */
+#room-view {
+  width: 100%;
 }
 
-.leave-btn:hover {
-  background: rgba(255, 107, 107, 0.22);
+.room-game {
+  display: grid;
+  grid-template-columns: 160px minmax(0, 1fr) 240px;
+  gap: 0;
+  height: 100vh;
+  height: 100dvh;
+  animation: fadeIn 0.35s ease-out;
+}
+@keyframes fadeIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
 }
 
-.room-note {
-  margin-top: 1.25rem;
-  color: var(--muted);
+/* ---- Game Sidebar (Left) ---- */
+.game-sidebar {
+  background: rgba(20, 16, 38, 0.65);
+  border-right: 1px solid var(--panel-border);
+  display: flex;
+  flex-direction: column;
+  position: relative;
+  overflow-y: auto;
+  transition: width 0.25s ease, min-width 0.25s ease;
+}
+.game-sidebar.collapsed {
+  width: 40px;
+  min-width: 40px;
+}
+.game-sidebar.collapsed .sidebar-content {
+  display: none;
+}
+.sidebar-toggle-btn {
+  width: 100%;
+  padding: 0.4rem;
   font-size: 0.8rem;
+  background: rgba(255, 255, 255, 0.05);
+  border: none;
+  border-bottom: 1px solid var(--panel-border);
+  color: var(--muted);
+  cursor: pointer;
+  transition: background 0.15s;
+  flex-shrink: 0;
+}
+.sidebar-toggle-btn:hover {
+  background: rgba(255, 255, 255, 0.1);
+  color: var(--text);
+}
+.sidebar-content {
+  padding: 0.5rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.6rem;
+  flex: 1;
+}
+.sidebar-section { }
+.sidebar-label {
+  font-size: 0.6rem;
+  font-weight: 800;
+  color: var(--muted);
+  text-transform: uppercase;
+  letter-spacing: 1.5px;
+  margin-bottom: 0.35rem;
+}
+.sidebar-room-code {
+  font-size: 1.1rem;
+  font-weight: 900;
+  letter-spacing: 3px;
+  font-family: "Consolas", "Courier New", monospace;
+  background: linear-gradient(120deg, #c9bfff, #7d6ff0);
+  -webkit-background-clip: text;
+  background-clip: text;
+  -webkit-text-fill-color: transparent;
+  margin-bottom: 0.3rem;
+}
+.sidebar-invite-btn {
+  width: 100%;
+  margin-bottom: 0.3rem;
+}
+
+.sidebar-player-list {
+  list-style: none;
+  display: flex;
+  flex-direction: column;
+  gap: 0.3rem;
+  max-height: 200px;
+  overflow-y: auto;
+}
+.sidebar-player-list li {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  padding: 0.3rem 0.45rem;
+  background: rgba(20, 16, 38, 0.55);
+  border: 1px solid var(--panel-border);
+  border-radius: 8px;
+  font-size: 0.78rem;
+  transition: border-color 0.15s;
+}
+.sidebar-player-list li.drawing {
+  border-color: var(--accent);
+  box-shadow: 0 0 10px rgba(124, 111, 240, 0.3);
+}
+.sidebar-player-list .player-avatar {
+  width: 22px;
+  height: 22px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 900;
+  font-size: 0.65rem;
+  color: #fff;
+  flex-shrink: 0;
+}
+.sidebar-player-list .player-name {
+  flex: 1;
+  font-weight: 700;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.sidebar-player-list .leader-badge {
+  font-size: 0.5rem;
+  font-weight: 900;
+  letter-spacing: 0.5px;
+  padding: 0.1rem 0.3rem;
+  border-radius: 999px;
+  background: linear-gradient(135deg, #ffd76a, #f7b731);
+  color: #3d2c00;
+}
+.sidebar-player-list .guess-badge {
+  width: 16px;
+  height: 16px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 50%;
+  background: linear-gradient(135deg, #3fe08b, #1d9e57);
+  color: #fff;
+  font-size: 0.6rem;
+  font-weight: 900;
+  flex-shrink: 0;
+}
+.sidebar-player-list .player-score {
+  font-size: 0.65rem;
+  font-weight: 800;
+  color: var(--success);
+  white-space: nowrap;
+}
+.sidebar-category {
+  font-size: 0.82rem;
+  font-weight: 800;
+  color: var(--text);
+}
+.sidebar-leave-btn {
+  margin-top: auto;
+  width: 100%;
+}
+.sidebar-note {
+  color: var(--muted);
+  font-size: 0.7rem;
   text-align: center;
 }
 
-/* ---- Word banner (skribbl-style) ---- */
-.word-banner {
+/* ---- Game Center (Canvas Area) ---- */
+.game-center {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+  min-height: 0;
+  padding: 0.3rem 0.5rem;
+  position: relative;
+  overflow: visible;
+}
+
+.game-header {
+  display: flex;
+  align-items: center;
+  gap: 0.8rem;
+  padding: 0.25rem 0.5rem;
+  background: rgba(20, 16, 38, 0.5);
+  border: 1px solid var(--panel-border);
+  border-radius: 8px;
+  margin-bottom: 0.2rem;
+  flex-shrink: 0;
+  flex-wrap: wrap;
+}
+.game-round-info {
+  font-size: 0.78rem;
+  font-weight: 800;
+  color: var(--muted);
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  white-space: nowrap;
+}
+.game-word-info {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+  flex: 1;
+  justify-content: center;
+}
+.game-word-label {
+  font-size: 0.95rem;
+  font-weight: 800;
+  color: var(--text);
+}
+.game-word-label .word {
+  color: #ffd76a;
+  letter-spacing: 2px;
+}
+.game-word-label .blanks {
+  color: #6b6488;
+  letter-spacing: 4px;
+}
+.game-word-banner .guess-label,
+.game-word-label .guess-label {
+  color: #8a84a8;
+  font-weight: 700;
+}
+.game-timer {
+  font-size: 1.3rem;
+  font-weight: 900;
+  font-variant-numeric: tabular-nums;
+  color: var(--text);
+  min-width: 40px;
+  text-align: center;
+}
+.game-timer.low {
+  color: var(--danger);
+  animation: pulse 1s infinite;
+}
+@keyframes pulse {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.45; }
+}
+.game-drawer-info {
+  font-size: 0.78rem;
+  font-weight: 700;
+  color: var(--muted);
+  white-space: nowrap;
+}
+.game-reactions {
+  display: flex;
+  gap: 0.4rem;
+  margin-left: auto;
+}
+.reaction-btn {
+  display: flex;
+  align-items: center;
+  gap: 0.25rem;
+  padding: 0.2rem 0.5rem;
+  font-size: 0.85rem;
+  font-family: inherit;
+  font-weight: 700;
+  color: var(--text);
+  background: rgba(255, 255, 255, 0.06);
+  border: 1px solid var(--panel-border);
+  border-radius: 8px;
+  cursor: pointer;
+  transition: background 0.15s, transform 0.1s;
+}
+.reaction-btn:hover {
+  background: rgba(255, 255, 255, 0.12);
+  transform: scale(1.05);
+}
+.reaction-btn span {
+  font-size: 0.75rem;
+  color: var(--muted);
+}
+
+.game-word-banner {
   background: linear-gradient(180deg, #ffffff, #f3f1ff);
   color: #191633;
-  border-radius: 12px;
-  padding: 0.8rem 1rem;
-  margin-bottom: 0.5rem;
+  border-radius: 8px;
+  padding: 0.35rem 0.7rem;
+  margin-bottom: 0.2rem;
   text-align: center;
-  font-size: 1.1rem;
+  font-size: 0.95rem;
   font-weight: 800;
   letter-spacing: 1px;
-  min-height: 3.2rem;
+  min-height: 2.2rem;
   display: flex;
   align-items: center;
   justify-content: center;
   gap: 0.5rem;
-  box-shadow: 0 6px 20px rgba(0, 0, 0, 0.3), inset 0 -3px 0 rgba(0, 0, 0, 0.07);
-}
-
-.word-banner .word {
-  color: #000;
-  letter-spacing: 4px;
-}
-
-.word-banner .blanks {
-  color: #6b6488;
-  letter-spacing: 4px;
-}
-
-.word-banner .guess-label {
-  color: #8a84a8;
-  font-weight: 700;
+  box-shadow: 0 4px 14px rgba(0, 0, 0, 0.25), inset 0 -2px 0 rgba(0, 0, 0, 0.05);
+  flex-shrink: 0;
 }
 
 /* ---- Timer bar ---- */
 .timer-bar {
-  height: 6px;
+  height: 4px;
   border-radius: 999px;
   background: rgba(255, 255, 255, 0.08);
   overflow: hidden;
-  margin-bottom: 0.75rem;
+  margin-bottom: 0.2rem;
+  flex-shrink: 0;
 }
-
 .timer-fill {
   height: 100%;
   width: 0%;
@@ -580,214 +809,293 @@ body::after {
   background: linear-gradient(90deg, var(--success), #1abc9c);
   transition: width 1s linear;
 }
-
 .timer-fill.low {
   background: linear-gradient(90deg, var(--danger), #ff9f43);
 }
 
-/* ---- Canvas toolbar ---- */
+/* ---- Canvas Toolbar (dropdown style) ---- */
 .canvas-toolbar {
   display: flex;
   align-items: center;
-  gap: 0.85rem;
-  margin-bottom: 0.75rem;
-  padding: 0.6rem 0.9rem;
+  gap: 0.5rem;
+  margin-bottom: 0.25rem;
+  padding: 0.3rem 0.5rem;
   background: rgba(20, 16, 38, 0.55);
   border: 1px solid var(--panel-border);
-  border-radius: 12px;
-  flex-wrap: wrap;
+  border-radius: 8px;
+  flex-shrink: 0;
+  flex-wrap: nowrap;
+  overflow: visible;
+  position: relative;
+  z-index: 10;
+}
+
+.tool-dropdown {
+  position: relative;
+}
+.tool-dropdown-btn {
+  padding: 0.35rem 0.65rem;
+  font-size: 0.78rem;
+  font-weight: 800;
+  font-family: inherit;
+  color: var(--text);
+  background: rgba(255, 255, 255, 0.08);
+  border: 1px solid var(--panel-border);
+  border-radius: 8px;
+  cursor: pointer;
+  white-space: nowrap;
+  transition: background 0.15s;
+}
+.tool-dropdown-btn:hover,
+.tool-dropdown-btn.active {
+  background: rgba(255, 255, 255, 0.15);
+  border-color: var(--accent);
+}
+.tool-dropdown-panel {
+  display: none;
+  position: absolute;
+  top: calc(100% + 4px);
+  left: 0;
+  z-index: 20;
+  background: var(--panel-solid);
+  border: 1px solid var(--panel-border);
+  border-radius: 10px;
+  padding: 0.5rem;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.4);
+  min-width: 160px;
+}
+.tool-dropdown-panel.open {
+  display: block;
 }
 
 .palette {
   display: flex;
-  gap: 0.4rem;
+  flex-wrap: wrap;
+  gap: 0.35rem;
   align-items: center;
 }
-
 .palette .swatch {
-  width: 27px;
-  height: 27px;
+  width: 24px;
+  height: 24px;
   border-radius: 50%;
   border: 2px solid rgba(255, 255, 255, 0.15);
   cursor: pointer;
   padding: 0;
   transition: transform 0.1s, border-color 0.1s, box-shadow 0.1s;
 }
-
-.palette .swatch:hover {
-  transform: scale(1.15);
-}
-
+.palette .swatch:hover { transform: scale(1.15); }
 .palette .swatch.active {
   border-color: #fff;
   transform: scale(1.15);
   box-shadow: 0 0 10px rgba(255, 255, 255, 0.45);
 }
 
-.canvas-toolbar .tool {
+.shapes-grid {
+  display: flex;
+  gap: 0.3rem;
+}
+.shape-btn {
+  width: 34px;
+  height: 34px;
   display: flex;
   align-items: center;
-  gap: 0.45rem;
+  justify-content: center;
+  font-size: 1.1rem;
+  background: rgba(255, 255, 255, 0.06);
+  border: 1px solid var(--panel-border);
+  border-radius: 8px;
+  cursor: pointer;
+  transition: background 0.15s, border-color 0.15s;
+}
+.shape-btn:hover {
+  background: rgba(255, 255, 255, 0.12);
+}
+.shape-btn.active {
+  background: rgba(124, 111, 240, 0.25);
+  border-color: var(--accent);
 }
 
-.canvas-toolbar .tool span {
-  font-size: 0.72rem;
+.eraser-btn.active {
+  background: var(--accent);
+}
+
+.color-indicator {
+  display: inline-block;
+  width: 20px;
+  height: 20px;
+  border-radius: 50%;
+  border: 2px solid rgba(255, 255, 255, 0.25);
+  background: #000;
+  flex-shrink: 0;
+  cursor: default;
+  vertical-align: middle;
+}
+
+.fill-btn.active {
+  background: var(--accent);
+}
+
+.toolbar-separator {
+  width: 1px;
+  height: 20px;
+  background: var(--panel-border);
+  flex-shrink: 0;
+}
+.size-label {
+  font-size: 0.7rem;
   font-weight: 800;
   color: var(--muted);
   text-transform: uppercase;
   letter-spacing: 1px;
+  flex-shrink: 0;
+}
+.size-adj-btn {
+  width: 24px;
+  height: 24px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 0.9rem;
+  font-weight: 900;
+  font-family: inherit;
+  color: var(--text);
+  background: rgba(255, 255, 255, 0.08);
+  border: 1px solid var(--panel-border);
+  border-radius: 6px;
+  cursor: pointer;
+  flex-shrink: 0;
+  transition: background 0.15s;
+}
+.size-adj-btn:hover {
+  background: rgba(255, 255, 255, 0.15);
 }
 
 .canvas-toolbar input[type="range"] {
-  width: 110px;
+  width: 80px;
   accent-color: var(--accent);
+  flex-shrink: 0;
 }
 
-#eraser-btn.active {
-  background: var(--accent);
+/* ---- Canvas ---- */
+.canvas-stage {
+  flex: 1 1 auto;
+  min-height: 0;
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
 }
-
-/* ---- Canvas (always white + visible) ---- */
 #drawing-canvas {
   display: block;
-  width: 100%;
-  height: auto;
+  max-width: 100%;
+  max-height: 100%;
   aspect-ratio: 800 / 500;
   background: #ffffff;
   border: 1px solid var(--panel-border);
-  border-radius: 12px;
+  border-radius: 10px;
   cursor: default;
   touch-action: none;
-  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.35);
+  box-shadow: 0 6px 20px rgba(0, 0, 0, 0.3);
 }
-
-/* ---- Chat sidebar ---- */
-.chat-sidebar {
-  display: flex;
-  min-width: 0;
-}
-
-.chat-panel {
+#shape-preview-canvas {
+  position: absolute;
+  top: 0;
+  left: 0;
   width: 100%;
+  height: 100%;
+  pointer-events: none;
+  border-radius: 10px;
+}
+
+/* ---- Game Chat (Right) ---- */
+.game-chat {
   display: flex;
   flex-direction: column;
-  background: rgba(20, 16, 38, 0.55);
-  border: 1px solid var(--panel-border);
-  border-radius: 12px;
-  padding: 0.85rem 1rem;
+  min-width: 0;
+  border-left: 1px solid var(--panel-border);
+  background: rgba(20, 16, 38, 0.4);
+}
+.game-chat .chat-panel {
+  width: 100%;
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  background: transparent;
+  border: none;
+  border-radius: 0;
+  padding: 0.4rem;
 }
 
+/* ---- Chat shared styles ---- */
 .chat-messages {
   flex: 1;
   min-height: 0;
   overflow-y: auto;
   display: flex;
   flex-direction: column;
-  gap: 0.35rem;
+  gap: 0.3rem;
   padding-right: 0.25rem;
   padding-bottom: 0.4rem;
 }
-
 .chat-msg {
-  font-size: 0.9rem;
+  font-size: 0.85rem;
   line-height: 1.35;
   word-break: break-word;
   animation: rise 0.18s ease-out;
 }
-
 .chat-msg .chat-name {
   font-weight: 800;
   color: var(--accent);
   margin-right: 0.35rem;
 }
-
-.chat-msg .chat-name.self {
-  color: var(--success);
-}
-
+.chat-msg .chat-name.self { color: var(--success); }
 .chat-msg.system {
   color: var(--muted);
   font-style: italic;
-  font-size: 0.83rem;
+  font-size: 0.8rem;
   text-align: center;
   padding: 0.2rem 0;
 }
-
-/* Quick chat phrases */
-.quick-phrases {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 0.35rem;
-  margin-bottom: 0.55rem;
-}
-
-.quick-phrases button {
-  font-family: inherit;
-  font-size: 0.75rem;
-  font-weight: 700;
-  color: var(--text);
-  background: rgba(124, 111, 240, 0.16);
-  border: 1px solid rgba(124, 111, 240, 0.35);
-  border-radius: 999px;
-  padding: 0.25rem 0.6rem;
-  cursor: pointer;
-  transition: background 0.12s, transform 0.12s;
-}
-
-.quick-phrases button:hover {
-  background: rgba(124, 111, 240, 0.32);
-  transform: translateY(-1px);
-}
-
 .chat-input-row {
   display: flex;
-  gap: 0.5rem;
-  margin-top: 0.1rem;
+  gap: 0.4rem;
+  margin-top: 0.3rem;
+  flex-shrink: 0;
 }
-
 .chat-input-row input {
   flex: 1;
   min-width: 0;
-  padding: 0.5rem 0.7rem;
-  font-size: 0.9rem;
+  padding: 0.45rem 0.65rem;
+  font-size: 0.85rem;
   font-family: inherit;
   color: var(--text);
   background: rgba(12, 9, 26, 0.7);
   border: 1px solid var(--panel-border);
-  border-radius: 10px;
+  border-radius: 8px;
   outline: none;
   transition: border-color 0.15s, box-shadow 0.15s;
 }
-
 .chat-input-row input:focus {
   border-color: var(--accent);
   box-shadow: 0 0 0 3px rgba(124, 111, 240, 0.2);
 }
-
-.chat-input-row input::placeholder {
-  color: #6a6390;
-}
-
+.chat-input-row input::placeholder { color: #6a6390; }
 .chat-input-row .btn {
   width: auto;
-  padding: 0.5rem 0.9rem;
+  padding: 0.45rem 0.8rem;
 }
 
 /* ---- Scrollbars ---- */
 .chat-messages::-webkit-scrollbar,
-.player-list::-webkit-scrollbar {
-  width: 8px;
+.player-list::-webkit-scrollbar,
+.sidebar-player-list::-webkit-scrollbar {
+  width: 6px;
 }
-
 .chat-messages::-webkit-scrollbar-thumb,
-.player-list::-webkit-scrollbar-thumb {
+.player-list::-webkit-scrollbar-thumb,
+.sidebar-player-list::-webkit-scrollbar-thumb {
   background: rgba(255, 255, 255, 0.14);
   border-radius: 999px;
-}
-
-.chat-messages::-webkit-scrollbar-thumb:hover,
-.player-list::-webkit-scrollbar-thumb:hover {
-  background: rgba(255, 255, 255, 0.24);
 }
 
 /* ---- Scoreboard modal ---- */
@@ -803,12 +1111,10 @@ body::after {
   padding: 1rem;
   animation: fade 0.25s ease-out;
 }
-
 @keyframes fade {
   from { opacity: 0; }
   to { opacity: 1; }
 }
-
 .modal-panel {
   background: var(--panel);
   border: 1px solid var(--panel-border);
@@ -821,7 +1127,6 @@ body::after {
   box-shadow: 0 24px 64px rgba(0, 0, 0, 0.6), inset 0 1px 0 rgba(255, 255, 255, 0.06);
   animation: rise 0.3s ease-out;
 }
-
 .modal-title {
   font-size: 1.7rem;
   font-weight: 900;
@@ -831,7 +1136,6 @@ body::after {
   background-clip: text;
   -webkit-text-fill-color: transparent;
 }
-
 .winner-text {
   color: var(--accent);
   font-weight: 800;
@@ -839,7 +1143,6 @@ body::after {
   margin-bottom: 1.1rem;
   min-height: 1.5rem;
 }
-
 .scoreboard-list {
   list-style: none;
   display: flex;
@@ -848,7 +1151,6 @@ body::after {
   margin-bottom: 1.5rem;
   text-align: left;
 }
-
 .scoreboard-list li {
   display: flex;
   align-items: center;
@@ -858,20 +1160,17 @@ body::after {
   border: 1px solid var(--panel-border);
   border-radius: 10px;
 }
-
 .scoreboard-list li.winner {
   border-color: var(--gold);
   background: rgba(80, 66, 40, 0.35);
   box-shadow: 0 0 16px rgba(247, 183, 49, 0.25);
 }
-
 .scoreboard-list .rank {
   font-weight: 900;
   color: var(--muted);
   min-width: 1.5rem;
   text-align: center;
 }
-
 .scoreboard-list .player-name {
   flex: 1;
   font-weight: 800;
@@ -880,27 +1179,19 @@ body::after {
   overflow: hidden;
   text-overflow: ellipsis;
 }
-
-.scoreboard-list li.winner .player-name {
-  color: var(--gold);
-}
-
+.scoreboard-list li.winner .player-name { color: var(--gold); }
 .scoreboard-list .player-score {
   font-weight: 900;
   color: var(--success);
   white-space: nowrap;
 }
-
 .waiting-text {
   color: var(--muted);
   font-size: 0.9rem;
   font-weight: 600;
   margin-top: 0.5rem;
 }
-
-#play-again-btn {
-  margin-top: 0.25rem;
-}
+#play-again-btn { margin-top: 0.25rem; }
 
 /* ---- Confetti ---- */
 .confetti {
@@ -912,6 +1203,12 @@ body::after {
   z-index: 100;
   pointer-events: none;
   animation: confetti-fall 2.4s linear forwards;
+}
+@keyframes confetti-fall {
+  to {
+    transform: translate(var(--drift, 0px), 108vh) rotate(540deg);
+    opacity: 0.6;
+  }
 }
 
 /* ---- Connection banner + toasts ---- */
@@ -929,7 +1226,6 @@ body::after {
   padding: 0.65rem 1rem;
   box-shadow: 0 4px 18px rgba(0, 0, 0, 0.35);
 }
-
 .toast {
   position: fixed;
   left: 50%;
@@ -948,672 +1244,134 @@ body::after {
   text-align: center;
   animation: toast-in 0.25s ease-out;
 }
-
 @keyframes toast-in {
   from { opacity: 0; transform: translate(-50%, 12px); }
   to { opacity: 1; transform: translate(-50%, 0); }
 }
 
-@keyframes confetti-fall {
-  to {
-    transform: translate(var(--drift, 0px), 108vh) rotate(540deg);
-    opacity: 0.6;
-  }
-}
-
-/* =====================================================================
-   Responsive gameplay layout (phones + tablets)
-   ---------------------------------------------------------------------
-   Desktop (>= 1100px) keeps the 3-column layout defined above, untouched.
-   Below 1100px the game fills the viewport like an app:
-   - the canvas is the primary, largest element
-   - chat scrolls internally; the guess input + SEND stay pinned below it
-   - no page scrolling during gameplay
-   ===================================================================== */
-
-/* ---- Canvas stage: wrapper that gives the canvas a definite box ---- */
-.canvas-stage {
-  display: block;
-  min-width: 0;
-  min-height: 0;
-}
-
+/* ============================================
+   RESPONSIVE — Tablets / Landscape
+   ============================================ */
 @media (max-width: 1099px) {
-  /* ---- In-room: the game fills the viewport, no page scroll ---- */
-  body:has(#room-view:not(.hidden)) {
-    padding: 0;
-    overflow: hidden;
-  }
-
-  body:has(#room-view:not(.hidden)) .app {
-    max-width: none;
-    height: 100vh;
-    height: 100dvh;
-    display: flex;
-    flex-direction: column;
-  }
-
-  /* Slim title bar while in a room (tagline hidden, sound toggle kept) */
-  body:has(#room-view:not(.hidden)) .title-bar {
-    flex: 0 0 auto;
-    margin: 0;
-    min-height: 40px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-  }
-
-  body:has(#room-view:not(.hidden)) .game-title {
-    font-size: 1.05rem;
-    margin: 0;
-  }
-
-  body:has(#room-view:not(.hidden)) .tagline {
-    display: none;
-  }
-
-  body:has(#room-view:not(.hidden)) .sound-toggle {
-    top: 2px;
-    right: 0;
-    width: 34px;
-    height: 34px;
-    font-size: 0.95rem;
-  }
-
-  body:has(#room-view:not(.hidden)) .room-panel {
+  /* Lobby in-room */
+  body:has(#room-view:not(.hidden)) .room-lobby {
     flex: 1 1 auto;
     min-height: 0;
     display: flex;
     flex-direction: column;
-    padding: 0.9rem;
-    border-radius: 16px;
+    padding: 0.7rem;
+    overflow-y: auto;
   }
-
   body:has(#room-view:not(.hidden)) .room-header {
     flex: 0 0 auto;
-    margin-bottom: 0.6rem;
+    margin-bottom: 0.5rem;
   }
 
-  /* ---- Canvas area: canvas stage absorbs all leftover space ---- */
-  .canvas-area {
-    display: flex;
-    flex-direction: column;
-    min-height: 0;
-    min-width: 0;
-  }
-
-  .canvas-stage {
-    flex: 1 1 auto;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-  }
-
-  /* The JS fitter sets explicit pixel size preserving 800:500; these
-     max constraints are the pre-JS fallback (no overflow, no stretch). */
-  #drawing-canvas {
-    width: auto;
-    height: auto;
-    max-width: 100%;
-    max-height: 100%;
-    aspect-ratio: 800 / 500;
-  }
-
-  /* ---- During play, hide lobby-only sidebar controls ---- */
-  body[data-game-status="PLAYING"] .category-box,
-  body[data-game-status="PLAYING"] #start-game-btn,
-  body[data-game-status="PLAYING"] #start-error,
-  body[data-game-status="PLAYING"] .room-note {
-    display: none;
-  }
-
-  /* ---- Chat: internal scroll only, input + SEND pinned below ---- */
-  .chat-sidebar {
-    min-width: 0;
-    min-height: 0;
-  }
-
-  .chat-panel {
+  /* Game fills viewport */
+  .room-game {
     height: 100%;
+    min-height: 0;
   }
 }
 
-/* ---- Tablets (>= 720px) and any landscape screen < 1100px ----
-   Two-column gameplay: big canvas left, chat right, players as a slim
-   horizontal bar on top. Uses screen width efficiently instead of
-   stacking like a stretched phone. */
-@media (min-width: 720px) and (max-width: 1099px), (max-width: 1099px) and (orientation: landscape) {
+/* Tablet landscape: lobby 2-col */
+@media (min-width: 720px) and (max-width: 1099px) {
   .room-layout {
-    flex: 1 1 auto;
-    min-height: 0;
-    display: grid;
-    grid-template-columns: minmax(0, 1fr) minmax(230px, 280px);
-    grid-template-rows: auto minmax(0, 1fr);
-    grid-template-areas:
-      "players players"
-      "canvas chat";
-    gap: 0.7rem;
-    overflow-y: auto;
-  }
-
-  /* Players: horizontal bar spanning both columns */
-  .players-sidebar {
-    grid-area: players;
-    display: flex;
-    align-items: center;
+    grid-template-columns: minmax(0, 1fr) minmax(200px, 280px);
     gap: 0.8rem;
-    padding: 0.5rem 0.7rem;
-    background: rgba(20, 16, 38, 0.55);
-    border: 1px solid var(--panel-border);
-    border-radius: 12px;
-  }
-
-  .players-sidebar .players-area {
-    flex: 1 1 auto;
-    min-width: 0;
-  }
-
-  .players-sidebar .players-area h3 {
-    display: none;
-  }
-
-  .players-sidebar .player-list {
-    flex-direction: row;
-    flex-wrap: nowrap;
-    overflow-x: auto;
-    gap: 0.4rem;
-    scrollbar-width: none; /* keep the bar slim — chips still scroll by touch */
-  }
-
-  .players-sidebar .player-list::-webkit-scrollbar {
-    display: none;
-  }
-
-  .players-sidebar .player-list li {
-    flex: 0 0 auto;
-    padding: 0.35rem 0.55rem;
-    gap: 0.35rem;
-  }
-
-  .players-sidebar .player-list .player-avatar {
-    width: 26px;
-    height: 26px;
-    font-size: 0.7rem;
-  }
-
-  .players-sidebar .player-list .player-name {
-    font-size: 0.8rem;
-    max-width: 110px;
-  }
-
-  .players-sidebar .player-list .player-score {
-    font-size: 0.7rem;
-  }
-
-  /* Category + start button sit in the bar before the game starts */
-  .players-sidebar .category-box {
-    flex: 0 0 auto;
-    width: 185px;
-    margin-top: 0;
-    padding: 0.4rem 0.55rem;
-  }
-
-  .players-sidebar .category-box h3 {
-    display: none;
-  }
-
-  .players-sidebar #start-game-btn {
-    flex: 0 0 auto;
-    width: auto;
-    margin-top: 0;
-    padding: 0.55rem 1rem;
-  }
-
-  .players-sidebar .leave-btn {
-    flex: 0 0 auto;
-    width: auto;
-    margin-top: 0;
-    padding: 0.45rem 0.7rem;
-    white-space: nowrap;
-  }
-
-  .players-sidebar .room-note {
-    display: none;
-  }
-
-  /* Canvas (left) / chat (right) columns */
-  .canvas-area {
-    grid-area: canvas;
-    gap: 0.5rem;
-  }
-
-  .chat-sidebar {
-    grid-area: chat;
-    height: 100%;
   }
 }
 
-/* ---- Landscape: compact header/toolbar, more width for the canvas ---- */
-@media (max-width: 1099px) and (orientation: landscape) {
-  .room-layout {
-    grid-template-columns: minmax(0, 1fr) minmax(200px, 34vw);
-  }
-
-  body:has(#room-view:not(.hidden)) .room-header {
-    margin-bottom: 0.3rem;
-  }
-
-  body:has(#room-view:not(.hidden)) .room-panel {
-    padding: 0.5rem 0.7rem;
-    padding-left: max(0.7rem, env(safe-area-inset-left));
-    padding-right: max(0.7rem, env(safe-area-inset-right));
-  }
-
-  .room-code {
-    font-size: 1.05rem;
-    letter-spacing: 2px;
-  }
-
-  .room-meta {
-    gap: 0.5rem;
-  }
-
-  .room-meta .timer {
-    font-size: 1rem;
-    min-width: 44px;
-  }
-
-  .room-meta .game-info {
-    font-size: 0.72rem;
-  }
-
-  #word-banner {
-    min-height: 2.2rem;
-    padding: 0.35rem 0.6rem;
-    font-size: 0.9rem;
-    margin-bottom: 0.25rem;
-  }
-
-  .timer-bar {
-    margin-bottom: 0.25rem;
-  }
-
-  .canvas-toolbar {
-    flex-wrap: nowrap;
-    overflow-x: auto;
-    padding: 0.35rem 0.5rem;
-    gap: 0.4rem;
-    margin-bottom: 0;
-  }
-
-  .canvas-toolbar .tool span {
-    display: none;
-  }
-
-  .palette {
-    flex-wrap: nowrap;
-    overflow-x: auto;
-  }
-
-  .palette .swatch {
-    width: 24px;
-    height: 24px;
-    flex-shrink: 0;
-  }
-
-  #brush-size-input {
-    width: 70px;
-  }
-
-  .canvas-area {
-    gap: 0.35rem;
-  }
-
-  .players-sidebar {
-    padding: 0.35rem 0.55rem;
-  }
-
-  .players-sidebar .player-list li {
-    padding: 0.25rem 0.45rem;
-  }
-
-  .players-sidebar .player-list .player-avatar {
-    width: 24px;
-    height: 24px;
-    font-size: 0.65rem;
-  }
-
-  .players-sidebar .player-list .player-name {
-    max-width: 80px;
-    font-size: 0.75rem;
+/* Tablet/landscape game: narrower sidebar + chat */
+@media (min-width: 720px) and (max-width: 1099px) {
+  .room-game {
+    grid-template-columns: 140px minmax(0, 1fr) 220px;
   }
 }
 
-/* ===================== Phones (< 720px) ===================== */
+/* ---- Phones (< 720px) ---- */
 @media (max-width: 719px) {
-  /* Lobby screen keeps a little breathing room */
-  body {
-    padding: 1rem 0.75rem;
-  }
+  body { padding: 1rem 0.75rem; }
+  .game-title { font-size: 1.7rem; }
+  .sound-toggle { width: 40px; height: 40px; font-size: 1rem; }
 
-  .game-title {
-    font-size: 1.7rem;
-  }
+  .room-code { font-size: 1.35rem; letter-spacing: 3px; }
 
-  .sound-toggle {
-    width: 40px;
-    height: 40px;
-    font-size: 1rem;
-  }
-
-  .room-code {
-    font-size: 1.35rem;
-    letter-spacing: 3px;
-  }
-
-  .room-meta {
-    gap: 0.6rem;
-    flex-wrap: wrap;
-  }
-
-  .room-meta .timer {
-    font-size: 1.15rem;
-    min-width: 58px;
-  }
-
-  .room-meta .game-info {
-    font-size: 0.82rem;
-  }
-
-  /* Hide the app title bar during play — every pixel goes to the canvas */
-  body:has(#room-view:not(.hidden))[data-game-status="PLAYING"] .title-bar {
-    display: none;
-  }
-
-  /* Cheer chips give way to the guess input while playing */
-  body[data-game-status="PLAYING"] .quick-phrases {
-    display: none;
-  }
-
-  /* In-game scores on phones: the leaderboard collapses to a slim
-     horizontally-scrollable strip (avatar + name + score + ✓) while
-     playing, so scores stay visible without costing the canvas much.
-     It returns to the full panel in the lobby / round end. */
-  body[data-game-status="PLAYING"] .players-sidebar {
-    display: flex;
-    align-items: center;
-    gap: 0.4rem;
-    padding: 0.3rem 0.5rem;
-    background: rgba(20, 16, 38, 0.55);
-    border: 1px solid var(--panel-border);
-    border-radius: 10px;
-    flex: 0 0 auto;
-  }
-
-  body[data-game-status="PLAYING"] .players-area {
-    flex: 1 1 auto;
-    min-width: 0;
-  }
-
-  body[data-game-status="PLAYING"] .players-area h3 {
-    display: none;
-  }
-
-  body[data-game-status="PLAYING"] .player-list {
-    flex-direction: row;
-    flex-wrap: nowrap;
-    overflow-x: auto;
-    gap: 0.35rem;
-    scrollbar-width: none; /* keep the strip slim — chips still scroll by touch */
-  }
-
-  body[data-game-status="PLAYING"] .player-list::-webkit-scrollbar {
-    display: none;
-  }
-
-  body[data-game-status="PLAYING"] .player-list li {
-    flex: 0 0 auto;
-    padding: 0.2rem 0.45rem;
-    gap: 0.3rem;
-  }
-
-  body[data-game-status="PLAYING"] .player-list .player-avatar {
-    width: 24px;
-    height: 24px;
-    font-size: 0.65rem;
-  }
-
-  body[data-game-status="PLAYING"] .player-list .player-name {
-    font-size: 0.75rem;
-    max-width: 70px;
-  }
-
-  body[data-game-status="PLAYING"] .player-list .player-score {
-    font-size: 0.68rem;
-  }
-
-  body[data-game-status="PLAYING"] .player-list .leader-badge {
-    display: none;
-  }
-
-  body[data-game-status="PLAYING"] .leave-btn {
-    flex: 0 0 auto;
-    width: auto;
-    margin-top: 0;
-    padding: 0.35rem 0.6rem;
-    min-height: 34px;
-    white-space: nowrap;
-  }
-
-  /* Comfortable touch targets */
-  .btn {
-    min-height: 46px;
-  }
-
-  .canvas-toolbar .btn-small {
-    min-height: 44px;
-    padding: 0.6rem 0.95rem;
-    font-size: 0.9rem;
-  }
-
-  .word-option {
-    font-size: 1.05rem;
-    padding: 0.7rem 1.15rem;
-  }
-
-  .chat-input-row input {
-    min-height: 46px;
-    font-size: 1rem;
-  }
-
-  .chat-input-row .btn {
-    min-height: 46px;
-  }
-
-  .modal-panel {
-    padding: 1.4rem 1.1rem;
-    max-height: 90vh;
-    overflow-y: auto;
-  }
-
-  .player-list .player-avatar {
-    width: 32px;
-    height: 32px;
-  }
-}
-
-/* ---- Phone portrait: canvas-first stacked layout ----
-   Header/timer -> word -> CANVAS -> drawing controls -> chat -> input.
-   Everything fits the viewport; only the chat scrolls internally. */
-@media (max-width: 719px) and (orientation: portrait) {
-  body:has(#room-view:not(.hidden)) .room-panel {
-    padding: 0.55rem 0.6rem calc(0.55rem + env(safe-area-inset-bottom));
-    border-radius: 0;
-  }
-
-  body:has(#room-view:not(.hidden)) .room-header {
-    flex-wrap: wrap;
-    gap: 0.4rem;
-    margin-bottom: 0.35rem;
-  }
-
-  .room-code {
-    font-size: 1.15rem;
-    letter-spacing: 2px;
-  }
-
-  .room-meta .timer {
-    font-size: 1rem;
-    min-width: 46px;
-  }
-
-  .room-meta .game-info {
-    font-size: 0.72rem;
-  }
-
+  /* Lobby stacked */
   .room-layout {
-    flex: 1 1 auto;
-    min-height: 0;
-    display: flex;
-    flex-direction: column;
-    gap: 0.45rem;
-    overflow-y: auto;
+    grid-template-columns: 1fr;
+    gap: 0.6rem;
   }
 
-  /* Players: full panel in lobby / round-end only (hidden while playing) */
-  .players-sidebar {
-    flex: 0 0 auto;
-    order: 1;
+  /* Game: stacked on phones */
+  .room-game {
+    grid-template-columns: 1fr;
+    grid-template-rows: auto 1fr auto;
+    gap: 0;
   }
 
-  /* Canvas: biggest element of the screen */
-  .canvas-area {
-    flex: 1 1 auto;
-    order: 2;
-    gap: 0.35rem;
+  .game-sidebar {
+    flex-direction: row;
+    border-right: none;
+    border-bottom: 1px solid var(--panel-border);
+    overflow-x: auto;
+    overflow-y: hidden;
   }
+  .game-sidebar.collapsed { width: 100%; }
+  .sidebar-toggle-btn {
+    width: auto;
+    padding: 0.3rem 0.5rem;
+    border-bottom: none;
+    border-right: 1px solid var(--panel-border);
+  }
+  .sidebar-content {
+    flex-direction: row;
+    gap: 0.6rem;
+    padding: 0.4rem 0.5rem;
+    overflow-x: auto;
+    flex-wrap: nowrap;
+  }
+  .sidebar-section { min-width: 0; white-space: nowrap; }
+  .sidebar-player-list {
+    flex-direction: row;
+    max-height: none;
+    gap: 0.25rem;
+  }
+  .sidebar-leave-btn { display: none; }
+  .sidebar-note { display: none; }
 
-  #word-banner {
-    min-height: 2.3rem;
-    padding: 0.4rem 0.7rem;
-    font-size: 0.95rem;
-    margin-bottom: 0;
-  }
-
-  .canvas-stage {
-    order: 2;
-  }
+  .game-center { padding: 0.3rem 0.5rem; }
+  .game-header { gap: 0.4rem; padding: 0.25rem 0.4rem; }
+  .game-round-info { font-size: 0.65rem; }
+  .game-word-label { font-size: 0.8rem; }
+  .game-timer { font-size: 1rem; }
+  .game-drawer-info { font-size: 0.65rem; }
+  .game-reactions { gap: 0.2rem; }
+  .reaction-btn { padding: 0.15rem 0.35rem; font-size: 0.75rem; }
 
   .canvas-toolbar {
-    order: 3;
-    flex: 0 0 auto;
-    gap: 0.45rem;
-    padding: 0.45rem 0.5rem;
-    margin-bottom: 0;
+    padding: 0.3rem 0.4rem;
+    gap: 0.35rem;
+    margin-bottom: 0.2rem;
+  }
+  .canvas-toolbar input[type="range"] { width: 55px; }
+  .size-label { display: none; }
+
+  .game-chat {
+    border-left: none;
+    border-top: 1px solid var(--panel-border);
+    max-height: 35vh;
   }
 
-  .canvas-toolbar .tool span {
-    display: none;
-  }
-
-  .palette {
-    flex-wrap: nowrap;
-    overflow-x: auto;
-  }
-
-  .palette .swatch {
-    width: 26px;
-    height: 26px;
-    flex-shrink: 0;
-  }
-
-  #brush-size-input {
-    width: 72px;
-  }
-
-  /* Chat: fixed flexible height (~23% of viewport), internal scroll,
-     guess input + SEND pinned directly below the messages */
-  .chat-sidebar {
-    flex: 0 0 auto;
-    order: 4;
-    height: clamp(110px, 23dvh, 225px);
-  }
-
-  .chat-panel {
-    height: 100%;
-    padding: 0.55rem 0.65rem;
-  }
-
-  .quick-phrases {
-    flex-wrap: nowrap;
-    overflow-x: auto;
-  }
+  .btn { min-height: 44px; }
+  .chat-input-row input { min-height: 44px; font-size: 0.95rem; }
 }
 
-/* ---- Short landscape phones (height < 500px) ----
-   Vertical space is precious, so the word banner + timer float over the
-   top of the canvas. The leaderboard becomes an extra-slim score strip so
-   scores stay visible without stealing the drawing surface. */
+/* ---- Short landscape phones ---- */
 @media (max-width: 1099px) and (orientation: landscape) and (max-height: 500px) {
-  body[data-game-status="PLAYING"] .players-sidebar {
-    padding: 0.2rem 0.45rem;
-    gap: 0.35rem;
+  .room-game {
+    grid-template-columns: 130px minmax(0, 1fr) 180px;
   }
-
-  body[data-game-status="PLAYING"] .player-list li {
-    padding: 0.15rem 0.35rem;
-  }
-
-  body[data-game-status="PLAYING"] .player-list .player-avatar {
-    width: 22px;
-    height: 22px;
-    font-size: 0.6rem;
-  }
-
-  body[data-game-status="PLAYING"] .player-list .player-name {
-    font-size: 0.7rem;
-    max-width: 60px;
-  }
-
-  body[data-game-status="PLAYING"] .leave-btn {
-    padding: 0.25rem 0.5rem;
-    min-height: 30px;
-  }
-
-  .canvas-area {
-    position: relative;
-  }
-
-  .canvas-area #word-banner {
-    position: absolute;
-    top: 0;
-    left: 50%;
-    transform: translateX(-50%);
-    z-index: 3;
-    margin: 0;
-    min-height: 0;
-    padding: 0.3rem 0.9rem;
-    font-size: 0.88rem;
-    border-radius: 999px;
-    max-width: 92%;
-    box-shadow: 0 4px 14px rgba(0, 0, 0, 0.35);
-  }
-
-  .canvas-area .timer-bar {
-    position: absolute;
-    top: 2.15rem;
-    left: 0.4rem;
-    right: 0.4rem;
-    z-index: 3;
-    margin: 0;
-  }
-
-  .canvas-toolbar .palette {
-    max-width: 240px;
-  }
-
-  .canvas-toolbar .tool,
-  .canvas-toolbar .btn-small {
-    flex: 0 0 auto;
-  }
+  .game-header { padding: 0.2rem 0.35rem; }
+  .game-word-banner { min-height: 1.8rem; padding: 0.25rem 0.5rem; font-size: 0.85rem; }
 }
