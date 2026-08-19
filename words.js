@@ -103,16 +103,25 @@ function shuffle(arr) {
   return a;
 }
 
+const CATEGORY_NAMES = Object.keys(CATEGORIES);
+
 /**
- * Pick up to `count` distinct unused words from a category.
- * - Only words NOT in `usedWords` are eligible.
- * - If fewer than `count` remain, returns all remaining (never reuses used words).
- * - Returns [] when the category pool is exhausted.
+ * Pick up to `count` words, one from each of `count` different categories.
+ * Categories are selected starting from `categoryIndex` and cycling through.
+ * Each word is distinct and not in `usedWords`.
+ * Returns [] when all pools are exhausted.
  */
-function pickWords(category, usedWords, count) {
-  const pool = CATEGORIES[category] || [];
-  const unused = pool.filter((w) => !usedWords.has(w));
-  return shuffle(unused).slice(0, count);
+function pickWordsFromCategories(usedWords, count, categoryIndex) {
+  const result = [];
+  for (let i = 0; i < count; i++) {
+    const catName = CATEGORY_NAMES[(categoryIndex + i) % CATEGORY_NAMES.length];
+    const pool = CATEGORIES[catName] || [];
+    const unused = pool.filter((w) => !usedWords.has(w));
+    if (unused.length > 0) {
+      result.push(shuffle(unused)[0]);
+    }
+  }
+  return result;
 }
 
-module.exports = { CATEGORIES, pickWords };
+module.exports = { CATEGORIES, CATEGORY_NAMES, pickWordsFromCategories };

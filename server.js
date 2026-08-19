@@ -6,7 +6,7 @@ const express = require("express");
 const http = require("http");
 const path = require("path");
 const { Server } = require("socket.io");
-const { CATEGORIES, pickWords } = require("./words");
+const { CATEGORY_NAMES, pickWordsFromCategories } = require("./words");
 
 const PORT = Number(process.env.PORT) || 3000;
 const HOST = "0.0.0.0"; // listen on all interfaces (required for Render)
@@ -64,6 +64,12 @@ const TOTAL_ROUNDS = Number(process.env.TOTAL_ROUNDS) || 3; // rounds per game
 const WORD_OPTIONS_COUNT = 3; // words offered to the drawer each turn
 const WORD_CHOICE_TIME = Number(process.env.WORD_CHOICE_TIME) || 15; // seconds to pick a word
 
+// Game settings validation
+const VALID_DRAW_TIMES = [30, 45, 60, 90, 120];
+const VALID_HINT_COUNTS = [0, 1, 2, 3];
+const DEFAULT_DRAW_TIME = 60;
+const DEFAULT_HINT_COUNT = 2;
+
 // Scoring
 const GUESS_POINTS = 100; // base points for a correct guess
 const GUESS_TIME_BONUS_PER_SECOND = 2; // extra points per second remaining
@@ -103,11 +109,18 @@ function createRoom(roomId) {
     turnOrder: [], // snapshot of player socketIds for the current round
     turnIndex: 0, // index into turnOrder
     chatLog: [], // recent chat entries, replayed to late joiners
-    selectedCategory: null, // category chosen by the leader before the game
+    categoryIndex: 0, // cycling index into CATEGORY_NAMES for word selection
     usedWords: new Set(), // every word ever offered this game (offered = used)
     wordOptions: [], // the words currently offered to the drawer
     phase: "idle", // "idle" | "choosing" | "drawing"
     reactions: { thumbsup: 0, heart: 0 }, // reaction counters
+    reactionsByPlayer: {}, // { socketId: "thumbsup" | "heart" } — one reaction per user per turn
+    roundAutoStartTimer: null, // interval ID for auto-starting next round
+    gameOverTimer: null, // timeout ID for auto-restarting after game over
+    drawingTime: DEFAULT_DRAW_TIME, // host-configurable drawing duration
+    hintCount: DEFAULT_HINT_COUNT, // host-configurable hints per round
+    hintsRevealed: 0, // how many hints revealed this turn
+    revealedLetters: [], // [{index, letter}] revealed this turn
   };
 }
 
@@ -160,9 +173,13 @@ function getRoomSnapshot(room) {
     round: room.round,
     totalRounds: room.numRounds || TOTAL_ROUNDS,
     correctGuessers: Array.from(room.correctGuesses),
-    selectedCategory: room.selectedCategory,
     phase: room.phase, // "idle" | "choosing" | "drawing" (so late joiners see the right banner)
     wordLength: room.currentWord ? room.currentWord.length : 0,
+    drawingTime: room.drawingTime || DEFAULT_DRAW_TIME,
+    hintCount: room.hintCount !== undefined ? room.hintCount : DEFAULT_HINT_COUNT,
+    revealedLetters: room.revealedLetters || [],
+    hintsUsed: (room.revealedLetters || []).length,
+    maxHints: room.hintCount !== undefined ? room.hintCount : DEFAULT_HINT_COUNT,
   };
 }
 
@@ -219,6 +236,40 @@ function systemMessage(roomId, message) {
 }
 
 // ---------------------------------------------------------------------------
+// Hints
+// ---------------------------------------------------------------------------
+function revealHint(roomId) {
+  const room = rooms[roomId];
+  if (!room || !room.currentWord) return;
+
+  const word = room.currentWord;
+  const revealedIndices = new Set(room.revealedLetters.map((r) => r.index));
+  const unrevealed = [];
+
+  for (let i = 0; i < word.length; i++) {
+    const ch = word[i];
+    if (ch !== " " && ch !== "_" && !/[^a-zA-Z0-9]/.test(ch) && !revealedIndices.has(i)) {
+      unrevealed.push(i);
+    }
+  }
+
+  if (unrevealed.length === 0) return;
+
+  const randomIndex = unrevealed[Math.floor(Math.random() * unrevealed.length)];
+  const letter = word[randomIndex];
+  room.revealedLetters.push({ index: randomIndex, letter });
+
+  io.to(roomId).emit("hint_revealed", {
+    index: randomIndex,
+    letter,
+    hintsUsed: room.revealedLetters.length,
+    totalHints: room.hintCount,
+  });
+
+  console.log(`[HINT] Room ${roomId}: revealed "${letter}" at position ${randomIndex} (${room.revealedLetters.length}/${room.hintCount})`);
+}
+
+// ---------------------------------------------------------------------------
 // Game / turn system
 // ---------------------------------------------------------------------------
 // Starts a game (or the next round) — caller must validate status + player count
@@ -232,6 +283,12 @@ function startGame(roomId) {
   const wasGameOver = room.gameStatus === "GAME_OVER";
   room.gameStatus = "PLAYING";
 
+  // Cancel any pending auto-start timer
+  if (room.roundAutoStartTimer) {
+    clearInterval(room.roundAutoStartTimer);
+    room.roundAutoStartTimer = null;
+  }
+
   // A completely new game resets scores, the round counter, and the used-words pool
   if (wasGameOver) {
     room.players.forEach((p) => {
@@ -243,6 +300,7 @@ function startGame(roomId) {
   }
   if (wasLobby || wasGameOver) {
     room.usedWords = new Set();
+    room.categoryIndex = 0;
   }
 
   room.turnOrder = room.players.map((p) => p.socketId);
@@ -253,8 +311,8 @@ function startGame(roomId) {
   room.correctGuesses = new Set();
   room.reactions = { thumbsup: 0, heart: 0 };
 
-  systemMessage(roomId, `🎮 Game started! Round ${room.round} — ${room.players.length} players. Category: ${room.selectedCategory}.`);
-  console.log(`[GAME] Game started in room ${roomId} — round ${room.round} (${room.players.length} players, category ${room.selectedCategory})`);
+  systemMessage(roomId, `Game started! Round ${room.round} — ${room.players.length} players.`);
+  console.log(`[GAME] Game started in room ${roomId} — round ${room.round} (${room.players.length} players)`);
   startTurn(roomId);
 }
 
@@ -283,18 +341,21 @@ function startTurn(roomId) {
     return;
   }
 
-  // Pick up to 3 distinct unused words from the selected category
-  let options = pickWords(room.selectedCategory, room.usedWords, WORD_OPTIONS_COUNT);
+  // Pick up to 3 distinct unused words, one from each of 3 different categories
+  let options = pickWordsFromCategories(room.usedWords, WORD_OPTIONS_COUNT, room.categoryIndex);
   if (options.length === 0) {
-    // The category pool ran out mid-game (e.g. custom TOTAL_ROUNDS). Refill it
-    // so the game can always finish — the "no repetition" rule is best-effort.
+    // All category pools ran out mid-game. Refill so the game can always finish.
     room.usedWords = new Set();
-    options = pickWords(room.selectedCategory, room.usedWords, WORD_OPTIONS_COUNT);
+    room.categoryIndex = 0;
+    options = pickWordsFromCategories(room.usedWords, WORD_OPTIONS_COUNT, room.categoryIndex);
   }
   if (options.length === 0) {
     finishGame(roomId, "out_of_words");
     return;
   }
+
+  // Advance category index for the next turn so different categories are used
+  room.categoryIndex = (room.categoryIndex + WORD_OPTIONS_COUNT) % CATEGORY_NAMES.length;
 
   // Offered words count as used, even if the drawer does not pick them
   options.forEach((w) => room.usedWords.add(w));
@@ -306,6 +367,10 @@ function startTurn(roomId) {
   room.turnTimer = WORD_CHOICE_TIME;
   room.correctGuesses = new Set();
   room.strokeLog = []; // fresh canvas each turn
+  room.reactions = { thumbsup: 0, heart: 0 };
+  room.reactionsByPlayer = {};
+  room.hintsRevealed = 0;
+  room.revealedLetters = [];
 
   io.to(roomId).emit("clear_canvas");
   io.to(roomId).emit("turn_started", {
@@ -316,7 +381,7 @@ function startTurn(roomId) {
     choiceTime: WORD_CHOICE_TIME,
   });
   io.to(drawerId).emit("word_options", { options });
-  systemMessage(roomId, `✏️ ${drawer.username} is choosing a word…`);
+  systemMessage(roomId, `${drawer.username} is choosing a word...`);
   broadcastRoom(roomId);
 
   console.log(`[TURN] Round ${room.round}: ${drawer.username} choosing in room ${roomId} (${options.length} options)`);
@@ -331,11 +396,11 @@ function confirmWord(roomId, word) {
   const drawer = room.players.find((p) => p.socketId === room.currentDrawer);
   room.currentWord = word;
   room.phase = "drawing";
-  room.turnTimer = TURN_DURATION;
+  room.turnTimer = room.drawingTime || TURN_DURATION;
 
-  io.to(roomId).emit("word_chosen", { wordLength: word.length, turnDuration: TURN_DURATION });
+  io.to(roomId).emit("word_chosen", { wordLength: word.length, turnDuration: room.drawingTime || TURN_DURATION, hintCount: room.hintCount || DEFAULT_HINT_COUNT });
   io.to(room.currentDrawer).emit("your_word", { word });
-  systemMessage(roomId, `✏️ ${drawer ? drawer.username : "The drawer"} is drawing — ${word.length} letters.`);
+  systemMessage(roomId, `${drawer ? drawer.username : "The drawer"} is drawing — ${word.length} letters.`);
   broadcastRoom(roomId);
   console.log(`[TURN] ${drawer ? drawer.username : "?"} picked "${word}" in room ${roomId}`);
 }
@@ -357,11 +422,11 @@ function endTurn(roomId, reason) {
   });
 
   if (reason === "time_up") {
-    systemMessage(roomId, `⏰ Time's up! The word was ${word}`);
+    systemMessage(roomId, `Time's up! The word was ${word}`);
   } else if (reason === "all_guessed") {
-    systemMessage(roomId, `🏁 Everyone guessed it!`);
+    systemMessage(roomId, `Everyone guessed it!`);
   } else if (reason === "left") {
-    systemMessage(roomId, `🚪 ${drawer ? drawer.username : "The drawer"} left.`);
+    systemMessage(roomId, `${drawer ? drawer.username : "The drawer"} left.`);
   }
 
   room.currentDrawer = null;
@@ -404,13 +469,16 @@ function finishGame(roomId, reason) {
   io.to(roomId).emit("clear_canvas");
 
   if (reason === "out_of_words") {
-    systemMessage(roomId, `😅 The ${room.selectedCategory} category ran out of words — game over!`);
-    console.log(`[GAME] Game over in room ${roomId}: ${room.selectedCategory} category out of words`);
+    systemMessage(roomId, `Ran out of words — game over!`);
+    console.log(`[GAME] Game over in room ${roomId}: out of words`);
   } else {
-    systemMessage(roomId, `🏁 Game over! ${winnerText}`);
+    systemMessage(roomId, `Game over! ${winnerText}`);
     console.log(`[GAME] Game over in room ${roomId}: ${winnerText}`);
   }
   broadcastRoom(roomId);
+
+  // Auto-restart new game after showing scoreboard
+  checkGameOverAutoRestart(roomId);
 }
 
 function endRound(roomId) {
@@ -432,9 +500,59 @@ function endRound(roomId) {
   room.gameStatus = "ROUND_END";
   io.to(roomId).emit("round_ended", { round: room.round });
   io.to(roomId).emit("clear_canvas");
-  systemMessage(roomId, `🏆 Round ${room.round} complete!`);
+    systemMessage(roomId, `Round ${room.round} complete!`);
   broadcastRoom(roomId);
   console.log(`[ROUND] Round ${room.round} complete in room ${roomId}`);
+
+  // Auto-start next round after a 5-second countdown
+  const nextRound = room.round + 1;
+  let countdown = 5;
+  io.to(roomId).emit("round_starting", { nextRound, countdown });
+
+  const timer = setInterval(() => {
+    countdown--;
+    if (countdown <= 0) {
+      clearInterval(timer);
+      room.roundAutoStartTimer = null;
+      // Only auto-start if still in ROUND_END (host might have manually started or players left)
+      if (room.gameStatus === "ROUND_END") {
+        startGame(roomId);
+      }
+    } else {
+      io.to(roomId).emit("round_starting", { nextRound, countdown });
+    }
+  }, 1000);
+
+  room.roundAutoStartTimer = timer;
+  console.log(`[ROUND] Next round starting in 5s in room ${roomId}`);
+}
+
+// ---------------------------------------------------------------------------
+// Auto-restart after game over (show scoreboard for a few seconds, then restart)
+// ---------------------------------------------------------------------------
+function checkGameOverAutoRestart(roomId) {
+  const room = rooms[roomId];
+  if (!room) return;
+  if (room.gameStatus !== "GAME_OVER") return;
+
+  let countdown = 10;
+  io.to(roomId).emit("game_restarting", { countdown });
+
+  const timer = setInterval(() => {
+    countdown--;
+    if (countdown <= 0) {
+      clearInterval(timer);
+      room.gameOverTimer = null;
+      if (room.gameStatus === "GAME_OVER" && room.players.length >= MIN_PLAYERS_TO_START) {
+        startGame(roomId);
+      }
+    } else {
+      io.to(roomId).emit("game_restarting", { countdown });
+    }
+  }, 1000);
+
+  room.gameOverTimer = timer;
+  console.log(`[GAME] Auto-restarting in 10s in room ${roomId}`);
 }
 
 // Global 1-second timer for all active turns (choosing + drawing phases)
@@ -446,10 +564,29 @@ setInterval(() => {
     room.turnTimer--;
     io.to(roomId).emit("turn_timer", { remaining: room.turnTimer });
 
+    // Progressive hint reveals during drawing phase
+    if (room.phase === "drawing" && room.hintCount > 0) {
+      const drawTime = room.drawingTime || TURN_DURATION;
+      const elapsed = drawTime - room.turnTimer;
+      while (room.hintsRevealed < room.hintCount) {
+        const threshold = (room.hintsRevealed + 1) * drawTime / (room.hintCount + 1);
+        if (elapsed >= threshold) {
+          revealHint(roomId);
+          room.hintsRevealed++;
+        } else {
+          break;
+        }
+      }
+    }
+
     if (room.turnTimer <= 0) {
       if (room.phase === "choosing") {
         // Drawer ran out of time to pick — auto-select the first option
-        confirmWord(roomId, room.wordOptions[0]);
+        if (room.wordOptions.length > 0) {
+          confirmWord(roomId, room.wordOptions[0]);
+        } else {
+          endTurn(roomId, "time_up");
+        }
       } else {
         endTurn(roomId, "time_up");
       }
@@ -515,7 +652,7 @@ io.on("connection", (socket) => {
     }
 
     if (room.players.length >= MAX_PLAYERS) {
-      socket.emit("error", { message: "Room is full (max 5 players)." });
+      socket.emit("error", { message: "Room is full." });
       return;
     }
 
@@ -547,7 +684,7 @@ io.on("connection", (socket) => {
     socket.emit("chat_history", room.chatLog);
   });
 
-  // START GAME — leader only; starts a game or the next round
+  // START GAME — leader only; starts the first game from lobby
   socket.on("start_game", (data) => {
     const roomId = socket.data.roomId;
     const room = roomId && rooms[roomId];
@@ -555,15 +692,10 @@ io.on("connection", (socket) => {
 
     const player = room.players.find((p) => p.socketId === socket.id);
     if (!player || !player.isLeader) return; // leader only
-    if (room.gameStatus !== "LOBBY" && room.gameStatus !== "ROUND_END" && room.gameStatus !== "GAME_OVER") return;
+    if (room.gameStatus !== "LOBBY") return; // only from lobby
     if (room.players.length < MIN_PLAYERS_TO_START) {
       socket.emit("error", { message: "Need at least 2 players to start." });
       return;
-    }
-    if (!room.selectedCategory) {
-      const cats = Object.keys(CATEGORIES);
-      room.selectedCategory = cats[Math.floor(Math.random() * cats.length)];
-      systemMessage(roomId, `🎲 No category chosen — randomly selected ${room.selectedCategory}.`);
     }
     if (data && data.numRounds) {
       room.numRounds = Math.min(9, Math.max(3, Number(data.numRounds) || 5));
@@ -571,23 +703,38 @@ io.on("connection", (socket) => {
     startGame(roomId);
   });
 
-  // SELECT CATEGORY — leader only, while the room is still in the lobby
-  socket.on("select_category", (data) => {
+  // SET GAME SETTINGS — host only, lobby only
+  socket.on("set_game_settings", (data) => {
     const roomId = socket.data.roomId;
     const room = roomId && rooms[roomId];
     if (!room) return;
-    if (room.gameStatus !== "LOBBY") return; // only before the game starts
 
     const player = room.players.find((p) => p.socketId === socket.id);
-    if (!player || !player.isLeader) return; // leader only
+    if (!player || !player.isLeader) return;
+    if (room.gameStatus !== "LOBBY") return;
 
-    const category = data && data.category;
-    if (!CATEGORIES[category]) return; // must be a valid category
+    let changed = false;
 
-    room.selectedCategory = category;
-    systemMessage(roomId, `🐾 Category set to ${category}.`);
-    broadcastRoom(roomId);
-    console.log(`[CATEGORY] ${roomId} category set to ${category} by ${player.username}`);
+    if (data && data.drawingTime !== undefined) {
+      const val = Number(data.drawingTime);
+      if (VALID_DRAW_TIMES.includes(val)) {
+        room.drawingTime = val;
+        changed = true;
+      }
+    }
+
+    if (data && data.hintCount !== undefined) {
+      const val = Number(data.hintCount);
+      if (VALID_HINT_COUNTS.includes(val)) {
+        room.hintCount = val;
+        changed = true;
+      }
+    }
+
+    if (changed) {
+      broadcastRoom(roomId);
+      console.log(`[SETTINGS] Room ${roomId}: drawingTime=${room.drawingTime}, hintCount=${room.hintCount}`);
+    }
   });
 
   // CHOOSE WORD — the drawer picks one of the offered options
@@ -609,7 +756,7 @@ io.on("connection", (socket) => {
   socket.on("draw_start", (data) => {
     const roomId = socket.data.roomId;
     const room = roomId && rooms[roomId];
-    if (!room || room.gameStatus !== "PLAYING" || room.currentDrawer !== socket.id) return;
+    if (!room || room.gameStatus !== "PLAYING" || room.currentDrawer !== socket.id || room.phase !== "drawing") return;
     if (
       !data ||
       !isValidPoint(data) ||
@@ -649,7 +796,7 @@ io.on("connection", (socket) => {
   socket.on("draw", (data) => {
     const roomId = socket.data.roomId;
     const room = roomId && rooms[roomId];
-    if (!room || room.gameStatus !== "PLAYING" || room.currentDrawer !== socket.id) return;
+    if (!room || room.gameStatus !== "PLAYING" || room.currentDrawer !== socket.id || room.phase !== "drawing") return;
     if (!isValidPoint(data)) return;
     const payload = { socketId: socket.id, x: data.x, y: data.y };
     logStroke(roomId, { type: "draw", ...payload });
@@ -660,7 +807,7 @@ io.on("connection", (socket) => {
   socket.on("draw_end", () => {
     const roomId = socket.data.roomId;
     const room = roomId && rooms[roomId];
-    if (!room || room.gameStatus !== "PLAYING" || room.currentDrawer !== socket.id) return;
+    if (!room || room.gameStatus !== "PLAYING" || room.currentDrawer !== socket.id || room.phase !== "drawing") return;
     socket.broadcast.to(roomId).emit("draw_end", { socketId: socket.id });
   });
 
@@ -668,7 +815,7 @@ io.on("connection", (socket) => {
   socket.on("clear_canvas", () => {
     const roomId = socket.data.roomId;
     const room = roomId && rooms[roomId];
-    if (!room || room.gameStatus !== "PLAYING" || room.currentDrawer !== socket.id) return;
+    if (!room || room.gameStatus !== "PLAYING" || room.currentDrawer !== socket.id || room.phase !== "drawing") return;
     rooms[roomId].strokeLog = [];
     console.log(`[DRAW] Canvas cleared in room ${roomId} by ${socket.id}`);
     io.to(roomId).emit("clear_canvas");
@@ -689,6 +836,9 @@ io.on("connection", (socket) => {
 
     const isDrawer = room.currentDrawer === socket.id;
 
+    // Drawer cannot send chat messages while drawing
+    if (isDrawer && room.gameStatus === "PLAYING" && room.phase === "drawing") return;
+
     // Correct-guess detection (drawer can't guess their own word)
     if (room.gameStatus === "PLAYING" && !isDrawer && room.currentWord) {
       if (normalizeWord(message) === normalizeWord(room.currentWord)) {
@@ -704,7 +854,7 @@ io.on("connection", (socket) => {
           }
 
           console.log(`[GUESS] ${player.username} guessed "${room.currentWord}" in room ${roomId} (+${points} pts)`);
-          systemMessage(roomId, `🎉 ${player.username} guessed the word! (+${points} pts)`);
+          systemMessage(roomId, `${player.username} guessed the word! (+${points} pts)`);
           broadcastRoom(roomId); // refresh scores in the player list
 
           // Everyone (except the drawer) has guessed — end the turn early
@@ -729,10 +879,38 @@ io.on("connection", (socket) => {
     const type = data && data.type;
     if (type !== "thumbsup" && type !== "heart") return;
 
-    // Increment a simple counter on the room
+    // Only allow reactions during active drawing phase
+    if (room.gameStatus !== "PLAYING" || room.phase !== "drawing") return;
+
     if (!room.reactions) room.reactions = { thumbsup: 0, heart: 0 };
+    if (!room.reactionsByPlayer) room.reactionsByPlayer = {};
+
+    const player = room.players.find((p) => p.socketId === socket.id);
+    if (!player) return;
+
+    // One reaction per user per turn — if already reacted, remove the old one
+    const prev = room.reactionsByPlayer[socket.id];
+    if (prev) {
+      room.reactions[prev] = Math.max(0, (room.reactions[prev] || 0) - 1);
+    }
+
+    room.reactionsByPlayer[socket.id] = type;
     room.reactions[type] = (room.reactions[type] || 0) + 1;
-    io.to(roomId).emit("reaction", { type, count: room.reactions[type] });
+
+    io.to(roomId).emit("reaction", {
+      type,
+      count: room.reactions[type],
+      userReactions: room.reactionsByPlayer,
+    });
+
+    // Emit a chat message for the reaction
+    const drawer = room.players.find((p) => p.socketId === room.currentDrawer);
+    const drawerName = drawer ? drawer.username : "the drawer";
+    if (type === "thumbsup") {
+      systemMessage(roomId, `${player.username} liked ${drawerName}'s drawing!`);
+    } else {
+      systemMessage(roomId, `${player.username} loved ${drawerName}'s drawing!`);
+    }
   });
 
   // LEAVE ROOM — client sends {} (voluntary exit, socket stays connected)
@@ -773,20 +951,34 @@ function handlePlayerLeft(roomId, socketId, label) {
     console.log(`[ROOM] ${room.players[0].username} is now the leader of ${roomId}`);
   }
 
+  // Cancel any pending timers when a player leaves
+  if (room.gameOverTimer) {
+    clearInterval(room.gameOverTimer);
+    room.gameOverTimer = null;
+  }
+
   // Handle mid-game departures
-  if (room.gameStatus === "PLAYING") {
+  if (room.gameStatus === "PLAYING" || room.gameStatus === "ROUND_END" || room.gameStatus === "GAME_OVER") {
     if (room.players.length < MIN_PLAYERS_TO_START) {
       // Not enough players — abort the game back to the lobby
+      if (room.roundAutoStartTimer) {
+        clearInterval(room.roundAutoStartTimer);
+        room.roundAutoStartTimer = null;
+      }
       room.gameStatus = "LOBBY";
+      room.round = 0;
       room.currentDrawer = null;
       room.currentWord = null;
       room.turnTimer = 0;
       room.turnOrder = [];
+      room.wordOptions = [];
+      room.phase = "idle";
+      room.players.forEach((p) => { p.score = 0; });
       io.to(roomId).emit("game_aborted", { message: "Not enough players — back to the lobby." });
       io.to(roomId).emit("clear_canvas");
-      systemMessage(roomId, "⚠️ Not enough players — back to the lobby.");
+      systemMessage(roomId, "Not enough players — back to the lobby.");
       console.log(`[GAME] Game aborted in room ${roomId} (not enough players)`);
-    } else if (room.currentDrawer === socketId) {
+    } else if (room.gameStatus === "PLAYING" && room.currentDrawer === socketId) {
       // The drawer left — move to the next turn
       endTurn(roomId, "left");
     }

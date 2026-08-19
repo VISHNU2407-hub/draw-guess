@@ -8,12 +8,13 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=Nunito:wght@400;600;700;800;900&display=swap" rel="stylesheet" />
   <link rel="stylesheet" href="style.css" />
+  <script src="https://unpkg.com/lucide@latest/dist/umd/lucide.js"></script>
 </head>
 <body>
   <div class="app">
     <header class="title-bar">
-      <button id="sound-toggle-btn" class="sound-toggle" title="Toggle sounds">🔊</button>
-      <h1 class="game-title">🎨 Draw &amp; Guess</h1>
+      <button id="sound-toggle-btn" class="sound-toggle" title="Toggle sounds" aria-label="Toggle sounds"><i data-lucide="volume-2"></i></button>
+      <h1 class="game-title"><i data-lucide="palette"></i> Draw &amp; Guess</h1>
       <p class="tagline">Real-time multiplayer drawing game</p>
     </header>
 
@@ -58,11 +59,6 @@
               <h3>Players</h3>
               <ul id="player-list" class="player-list"></ul>
             </div>
-            <div class="category-box">
-              <h3>Category</h3>
-              <select id="category-select" class="category-select hidden"></select>
-              <p id="category-display" class="category-display">🔒 No category selected yet</p>
-            </div>
             <div class="rounds-box">
               <h3>Rounds</h3>
               <select id="rounds-select" class="category-select hidden">
@@ -76,10 +72,34 @@
               </select>
               <p id="rounds-display" class="category-display">5 Rounds</p>
             </div>
+            <div class="settings-box">
+              <h3>Game Settings</h3>
+              <div class="setting-row">
+                <label class="setting-label">Drawing Time</label>
+                <select id="drawing-time-select" class="category-select hidden">
+                  <option value="30">30 seconds</option>
+                  <option value="45">45 seconds</option>
+                  <option value="60" selected>60 seconds</option>
+                  <option value="90">90 seconds</option>
+                  <option value="120">120 seconds</option>
+                </select>
+                <p id="drawing-time-display" class="category-display">60 seconds</p>
+              </div>
+              <div class="setting-row">
+                <label class="setting-label">Hints</label>
+                <select id="hint-count-select" class="category-select hidden">
+                  <option value="0">0 hints</option>
+                  <option value="1">1 hint</option>
+                  <option value="2" selected>2 hints</option>
+                  <option value="3">3 hints</option>
+                </select>
+                <p id="hint-count-display" class="category-display">2 hints</p>
+              </div>
+            </div>
             <button id="start-game-btn" class="btn btn-primary hidden">Start Game</button>
             <p id="start-error" class="error hidden"></p>
-            <button id="leave-room-btn" class="btn leave-btn">🚪 Leave Room</button>
-            <p class="room-note">2–5 players. Each player draws one word per round.</p>
+            <button id="leave-room-btn" class="btn leave-btn" aria-label="Leave room"><i data-lucide="log-out"></i> Leave Room</button>
+            <p class="room-note">2–9 players. Each player draws one word per round.</p>
           </aside>
 
           <div class="lobby-center">
@@ -104,7 +124,7 @@
 
         <!-- Left Sidebar -->
         <aside id="game-sidebar" class="game-sidebar">
-          <button id="sidebar-toggle-btn" class="sidebar-toggle-btn" title="Collapse sidebar">◀</button>
+            <button id="sidebar-toggle-btn" class="sidebar-toggle-btn" title="Collapse sidebar" aria-label="Toggle sidebar"><i data-lucide="panel-left-close"></i></button>
           <div class="sidebar-content">
             <div class="sidebar-section">
               <div class="sidebar-label">ROOM CODE</div>
@@ -115,12 +135,8 @@
               <div class="sidebar-label">PLAYERS (<span id="sidebar-player-count">0 / 5</span>)</div>
               <ul id="sidebar-player-list" class="sidebar-player-list"></ul>
             </div>
-            <div class="sidebar-section">
-              <div class="sidebar-label">CATEGORY</div>
-              <div id="sidebar-category" class="sidebar-category">🔒 None</div>
-            </div>
-            <button id="sidebar-leave-btn" class="btn leave-btn sidebar-leave-btn">🚪 Leave Room</button>
-            <p class="sidebar-note">2–5 players. Each player draws one word per round.</p>
+            <button id="sidebar-leave-btn" class="btn leave-btn sidebar-leave-btn" aria-label="Leave room"><i data-lucide="log-out"></i> Leave Room</button>
+            <p class="sidebar-note">2–9 players. Each player draws one word per round.</p>
           </div>
         </aside>
 
@@ -134,8 +150,8 @@
             </div>
             <span id="game-drawer" class="game-drawer-info">Drawer: —</span>
             <div class="game-reactions">
-              <button id="react-thumbsup" class="reaction-btn" title="Thumbs up">👍 <span id="reaction-thumbsup-count">0</span></button>
-              <button id="react-heart" class="reaction-btn" title="Love">❤️ <span id="reaction-heart-count">0</span></button>
+              <button id="react-thumbsup" class="reaction-btn" title="Thumbs up" aria-label="Thumbs up"><i data-lucide="thumbs-up"></i> <span id="reaction-thumbsup-count">0</span></button>
+              <button id="react-heart" class="reaction-btn" title="Love" aria-label="Love"><i data-lucide="heart"></i> <span id="reaction-heart-count">0</span></button>
             </div>
           </div>
 
@@ -154,16 +170,16 @@
               <button class="tool-dropdown-btn" id="shapes-toggle">Shapes ▼</button>
               <div class="tool-dropdown-panel" id="shapes-panel">
                 <div class="shapes-grid">
-                  <button class="shape-btn active" data-shape="freehand" title="Freehand">✏️</button>
+                  <button class="shape-btn active" data-shape="freehand" title="Freehand"><i data-lucide="pencil"></i></button>
                   <button class="shape-btn" data-shape="line" title="Line">╱</button>
                   <button class="shape-btn" data-shape="rect" title="Rectangle">▭</button>
                   <button class="shape-btn" data-shape="circle" title="Circle">◯</button>
                 </div>
               </div>
             </div>
-            <button id="eraser-btn-game" class="btn btn-small eraser-btn" title="Eraser">🧽 Eraser</button>
+            <button id="eraser-btn-game" class="btn btn-small eraser-btn" title="Eraser"><i data-lucide="eraser"></i> Eraser</button>
             <button id="undo-btn-game" class="btn btn-small" title="Undo last action">↶ Undo</button>
-            <button id="fill-btn-game" class="btn btn-small fill-btn" title="Fill area">🪣 Fill</button>
+            <button id="fill-btn-game" class="btn btn-small fill-btn" title="Fill area"><i data-lucide="paint-bucket"></i> Fill</button>
             <button id="clear-canvas-btn-game" class="btn btn-small">Clear</button>
             <div class="toolbar-separator"></div>
             <span class="size-label">Size</span>
@@ -196,7 +212,7 @@
     <!-- Scoreboard modal (game over) -->
     <div id="scoreboard-modal" class="modal hidden">
       <div class="modal-panel">
-        <h2 class="modal-title">🏁 Game Over!</h2>
+        <h2 class="modal-title"><i data-lucide="flag-checkered"></i> Game Over!</h2>
         <p id="winner-text" class="winner-text"></p>
         <ol id="scoreboard-list" class="scoreboard-list"></ol>
         <button id="play-again-btn" class="btn btn-primary hidden">Play Again</button>
@@ -207,5 +223,6 @@
 
   <script src="/socket.io/socket.io.js"></script>
   <script src="script.js"></script>
+  <script>lucide.createIcons();</script>
 </body>
 </html>

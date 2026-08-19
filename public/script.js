@@ -24,11 +24,13 @@ const playerCountEl = document.getElementById("player-count");
 const playerListEl = document.getElementById("player-list");
 const startGameBtn = document.getElementById("start-game-btn");
 const leaveRoomBtn = document.getElementById("leave-room-btn");
-const categorySelectEl = document.getElementById("category-select");
-const categoryDisplayEl = document.getElementById("category-display");
 const roundsSelectEl = document.getElementById("rounds-select");
 const roundsDisplayEl = document.getElementById("rounds-display");
 const startErrorEl = document.getElementById("start-error");
+const drawingTimeSelectEl = document.getElementById("drawing-time-select");
+const drawingTimeDisplayEl = document.getElementById("drawing-time-display");
+const hintCountSelectEl = document.getElementById("hint-count-select");
+const hintCountDisplayEl = document.getElementById("hint-count-display");
 
 // Game sidebar
 const gameSidebar = document.getElementById("game-sidebar");
@@ -37,7 +39,6 @@ const sidebarRoomCode = document.getElementById("sidebar-room-code");
 const sidebarInviteBtn = document.getElementById("sidebar-invite-btn");
 const sidebarPlayerCount = document.getElementById("sidebar-player-count");
 const sidebarPlayerList = document.getElementById("sidebar-player-list");
-const sidebarCategory = document.getElementById("sidebar-category");
 const sidebarLeaveBtn = document.getElementById("sidebar-leave-btn");
 
 // Game center
@@ -102,7 +103,9 @@ let turnDuration = 60;
 let choosingPhase = false;
 let wordOptions = [];
 let currentDrawerName = null;
-let selectedCategory = null;
+let hasReactedThisTurn = false;
+let revealedLetters = [];
+let maxHints = 2;
 
 // ---------------------------------------------------------------------------
 // Color palette
@@ -249,6 +252,39 @@ function updateShapeButtons() {
   });
 }
 
+function updateToolbarState() {
+  const isDrawer = amCurrentDrawer();
+  const pointerEvents = isDrawer ? "" : "none";
+  const opacity = isDrawer ? "1" : "0.35";
+  colorPaletteGameEl.style.pointerEvents = pointerEvents;
+  colorPaletteGameEl.style.opacity = opacity;
+  eraserBtn.style.pointerEvents = pointerEvents;
+  eraserBtn.style.opacity = opacity;
+  fillBtn.style.pointerEvents = pointerEvents;
+  fillBtn.style.opacity = opacity;
+  clearCanvasBtn.style.pointerEvents = pointerEvents;
+  clearCanvasBtn.style.opacity = opacity;
+  undoBtn.style.pointerEvents = pointerEvents;
+  undoBtn.style.opacity = opacity;
+  colorsToggle.style.pointerEvents = pointerEvents;
+  colorsToggle.style.opacity = opacity;
+  shapesToggle.style.pointerEvents = pointerEvents;
+  shapesToggle.style.opacity = opacity;
+  brushSizeInput.style.pointerEvents = pointerEvents;
+  brushSizeInput.style.opacity = opacity;
+  brushSizeDownBtn.style.pointerEvents = pointerEvents;
+  brushSizeDownBtn.style.opacity = opacity;
+  brushSizeUpBtn.style.pointerEvents = pointerEvents;
+  brushSizeUpBtn.style.opacity = opacity;
+  colorPaletteGameEl.querySelectorAll(".swatch").forEach((s) => {
+    s.style.pointerEvents = pointerEvents;
+  });
+  shapeBtns.forEach((b) => {
+    b.style.pointerEvents = pointerEvents;
+    b.style.opacity = opacity;
+  });
+}
+
 shapeBtns.forEach((btn) => {
   btn.addEventListener("click", () => {
     currentShape = btn.dataset.shape;
@@ -339,6 +375,23 @@ function amCurrentDrawer() {
   return currentGameStatus === "PLAYING" && socket.id === currentDrawerId && !choosingPhase;
 }
 
+function updateChatDisabledState() {
+  const isDrawer = amCurrentDrawer();
+  chatInputGameEl.disabled = isDrawer;
+  chatSendBtnGameEl.disabled = isDrawer;
+  chatInputGameEl.placeholder = isDrawer ? "You are drawing…" : "Type your guess…";
+}
+
+function updateReactionState() {
+  const canReact = !hasReactedThisTurn && currentGameStatus === "PLAYING" && !choosingPhase;
+  reactThumbsUpBtn.disabled = !canReact;
+  reactHeartBtn.disabled = !canReact;
+  reactThumbsUpBtn.style.opacity = canReact ? "1" : "0.4";
+  reactHeartBtn.style.opacity = canReact ? "1" : "0.4";
+  reactThumbsUpBtn.style.cursor = canReact ? "pointer" : "not-allowed";
+  reactHeartBtn.style.cursor = canReact ? "pointer" : "not-allowed";
+}
+
 function isGameActive() {
   return currentGameStatus === "PLAYING" || currentGameStatus === "ROUND_END";
 }
@@ -346,31 +399,15 @@ function isGameActive() {
 usernameInput.value = localStorage.getItem("dg-username") || "";
 
 // ---------------------------------------------------------------------------
-// Category selection
+// Helpers (icons)
 // ---------------------------------------------------------------------------
-const CATEGORY_EMOJI = {
-  Animals: "🐾", Food: "🍕", Objects: "📦", Places: "🏔️", Sports: "⚽",
-  Movies: "🎬", Professions: "🧑🍳", Actions: "🏃", Nature: "🌿", Technology: "💻",
-};
-
-{
-  const placeholder = document.createElement("option");
-  placeholder.value = "";
-  placeholder.textContent = "Select a category…";
-  categorySelectEl.appendChild(placeholder);
-  Object.keys(CATEGORY_EMOJI).forEach((cat) => {
-    const opt = document.createElement("option");
-    opt.value = cat;
-    opt.textContent = `${CATEGORY_EMOJI[cat]} ${cat}`;
-    categorySelectEl.appendChild(opt);
-  });
+function lucideIcon(name) {
+  return `<i data-lucide="${name}"></i>`;
 }
 
-categorySelectEl.addEventListener("change", () => {
-  const cat = categorySelectEl.value;
-  if (!cat) return;
-  socket.emit("select_category", { category: cat });
-});
+function refreshIcons() {
+  if (typeof lucide !== "undefined") lucide.createIcons();
+}
 
 // ---------------------------------------------------------------------------
 // Invite
@@ -436,13 +473,25 @@ joinRoomBtn.addEventListener("click", () => joinRoom());
 usernameInput.addEventListener("keydown", (e) => {
   if (e.key === "Enter") createRoom();
 });
+roomCodeInput.addEventListener("input", () => {
+  roomCodeInput.value = roomCodeInput.value.toUpperCase().replace(/[^A-Z0-9]/g, "").slice(0, 6);
+});
 roomCodeInput.addEventListener("keydown", (e) => {
   if (e.key === "Enter") joinRoom();
 });
 
 startGameBtn.addEventListener("click", () => {
   startErrorEl.classList.add("hidden");
+  startGameBtn.disabled = true;
   socket.emit("start_game", { numRounds: Number(roundsSelectEl.value) || 5 });
+});
+
+drawingTimeSelectEl.addEventListener("change", () => {
+  socket.emit("set_game_settings", { drawingTime: Number(drawingTimeSelectEl.value) });
+});
+
+hintCountSelectEl.addEventListener("change", () => {
+  socket.emit("set_game_settings", { hintCount: Number(hintCountSelectEl.value) });
 });
 
 leaveRoomBtn.addEventListener("click", () => {
@@ -459,7 +508,8 @@ let sidebarCollapsed = false;
 sidebarToggleBtn.addEventListener("click", () => {
   sidebarCollapsed = !sidebarCollapsed;
   gameSidebar.classList.toggle("collapsed", sidebarCollapsed);
-  sidebarToggleBtn.textContent = sidebarCollapsed ? "▶" : "◀";
+  sidebarToggleBtn.innerHTML = sidebarCollapsed ? lucideIcon("panel-left-open") : lucideIcon("panel-left-close");
+  refreshIcons();
 });
 
 function resetRoomUI() {
@@ -474,11 +524,14 @@ function resetRoomUI() {
   turnDuration = 60;
   choosingPhase = false;
   wordOptions = [];
-  selectedCategory = null;
   isDrawing = false;
+  revealedLetters = [];
+  maxHints = 2;
   shapePreviewCtx.clearRect(0, 0, shapePreviewCanvas.width, shapePreviewCanvas.height);
 
   scoreboardModalEl.classList.add("hidden");
+  const restartCountdownEl = document.getElementById("game-restart-countdown");
+  if (restartCountdownEl) restartCountdownEl.remove();
   roomViewEl.classList.add("hidden");
   lobbyEl.classList.remove("hidden");
 
@@ -492,16 +545,19 @@ function resetRoomUI() {
   // Reset sidebar
   sidebarCollapsed = false;
   gameSidebar.classList.remove("collapsed");
-  sidebarToggleBtn.textContent = "◀";
+  sidebarToggleBtn.innerHTML = lucideIcon("panel-left-close");
+  refreshIcons();
 
   // Reset reactions
+  hasReactedThisTurn = false;
   reactionThumbsUpCountEl.textContent = "0";
   reactionHeartCountEl.textContent = "0";
+  updateReactionState();
 
   clearCanvas();
   playerListEl.innerHTML = "";
   sidebarPlayerList.innerHTML = "";
-  gameWordBannerEl.textContent = "Waiting for the game to start…";
+  gameWordBannerEl.textContent = "Waiting for players to join…";
   gameRoundEl.textContent = "Round —";
   gameTimerEl.textContent = "—";
   gameTimerEl.classList.remove("low");
@@ -509,18 +565,22 @@ function resetRoomUI() {
   gameTimerFillEl.classList.remove("low");
   gameWordDisplayEl.innerHTML = "Word: -----";
   gameDrawerEl.textContent = "Drawer: —";
-  categorySelectEl.classList.add("hidden");
-  categoryDisplayEl.classList.remove("hidden");
-  categoryDisplayEl.textContent = "🔒 No category selected yet";
   roundsSelectEl.classList.add("hidden");
   roundsDisplayEl.classList.remove("hidden");
   roundsDisplayEl.textContent = "5 Rounds";
+  drawingTimeSelectEl.classList.add("hidden");
+  drawingTimeDisplayEl.classList.remove("hidden");
+  drawingTimeDisplayEl.textContent = "60 seconds";
+  hintCountSelectEl.classList.add("hidden");
+  hintCountDisplayEl.classList.remove("hidden");
+  hintCountDisplayEl.textContent = "2 hints";
   startErrorEl.classList.add("hidden");
+  updateToolbarState();
+  refreshIcons();
 }
 
 // ---------------------------------------------------------------------------
 // Switch between lobby and game views
-// ---------------------------------------------------------------------------
 function switchToGameView() {
   roomLobbyEl.classList.add("hidden");
   roomGameEl.classList.remove("hidden");
@@ -539,10 +599,10 @@ function showScoreboard(players) {
   const top = sorted.length ? sorted[0].score : 0;
   const winners = sorted.filter((p) => p.score === top);
 
-  winnerTextEl.textContent =
+  winnerTextEl.innerHTML =
     winners.length === 1
-      ? `🏆 ${winners[0].username} wins with ${top} points!`
-      : `🏆 It's a tie between ${winners.map((w) => w.username).join(" and ")} (${top} pts)!`;
+      ? `${lucideIcon("trophy")} ${winners[0].username} wins with ${top} points!`
+      : `${lucideIcon("trophy")} It's a tie between ${winners.map((w) => w.username).join(" and ")} (${top} pts)!`;
 
   scoreboardListEl.innerHTML = "";
   sorted.forEach((p, i) => {
@@ -555,7 +615,11 @@ function showScoreboard(players) {
 
     const name = document.createElement("span");
     name.className = "player-name";
-    name.textContent = (top > 0 && p.score === top ? "🏆 " : "") + p.username;
+    if (top > 0 && p.score === top) {
+      name.innerHTML = `${lucideIcon("trophy")} ${p.username}`;
+    } else {
+      name.textContent = p.username;
+    }
 
     const score = document.createElement("span");
     score.className = "player-score";
@@ -567,18 +631,17 @@ function showScoreboard(players) {
     scoreboardListEl.appendChild(li);
   });
 
-  playAgainBtn.classList.toggle("hidden", !amLeader);
-  waitingTextEl.classList.toggle("hidden", amLeader);
+  playAgainBtn.classList.add("hidden");
+  waitingTextEl.classList.add("hidden");
+  // Remove any restart countdown
+  const restartEl = document.getElementById("game-restart-countdown");
+  if (restartEl) restartEl.remove();
   scoreboardModalEl.classList.remove("hidden");
+  refreshIcons();
 }
-
-playAgainBtn.addEventListener("click", () => {
-  socket.emit("start_game");
-});
 
 // ---------------------------------------------------------------------------
 // Render room state
-// ---------------------------------------------------------------------------
 function renderRoom(room) {
   lobbyEl.classList.add("hidden");
   roomViewEl.classList.remove("hidden");
@@ -588,60 +651,66 @@ function renderRoom(room) {
   currentDrawerId = room.currentDrawer;
   roomPlayerCount = room.playerCount;
   amLeader = room.players.some((p) => p.socketId === socket.id && p.isLeader);
-  selectedCategory = room.selectedCategory || null;
 
   choosingPhase = currentGameStatus === "PLAYING" && room.phase === "choosing";
   wordLength = room.wordLength || 0;
+  if (room.revealedLetters && room.phase === "drawing") {
+    revealedLetters = room.revealedLetters;
+  }
   const currentDrawerPlayer = room.players.find((p) => p.socketId === room.currentDrawer);
   currentDrawerName = currentDrawerPlayer ? currentDrawerPlayer.username : null;
 
   // Switch between lobby and game views
-  if (currentGameStatus === "PLAYING") {
+  if (currentGameStatus === "PLAYING" || currentGameStatus === "ROUND_END" || currentGameStatus === "GAME_OVER") {
     switchToGameView();
   } else {
     switchToLobbyView();
   }
+  updateToolbarState();
 
   // ---- Lobby header ----
   roomCodeEl.textContent = room.id;
   playerCountEl.textContent = `${room.playerCount} / ${room.maxPlayers} players`;
 
-  const canEditCategory = amLeader && currentGameStatus === "LOBBY";
-  categorySelectEl.classList.toggle("hidden", !canEditCategory);
-  categoryDisplayEl.classList.toggle("hidden", canEditCategory);
-  roundsSelectEl.classList.toggle("hidden", !canEditCategory);
-  roundsDisplayEl.classList.toggle("hidden", canEditCategory);
-  if (canEditCategory && room.totalRounds) {
+  const canEditSettings = amLeader && currentGameStatus === "LOBBY";
+  roundsSelectEl.classList.toggle("hidden", !canEditSettings);
+  roundsDisplayEl.classList.toggle("hidden", canEditSettings);
+  if (canEditSettings && room.totalRounds) {
     roundsSelectEl.value = room.totalRounds;
   }
-  if (!canEditCategory && room.totalRounds) {
+  if (!canEditSettings && room.totalRounds) {
     roundsDisplayEl.textContent = `${room.totalRounds} Rounds`;
   }
-  if (selectedCategory) {
-    categorySelectEl.value = selectedCategory;
-    categoryDisplayEl.textContent = `${CATEGORY_EMOJI[selectedCategory] || "📂"} ${selectedCategory}`;
-    startErrorEl.classList.add("hidden");
-  } else {
-    categorySelectEl.value = "";
-    categoryDisplayEl.textContent = "🔒 No category selected yet";
+
+  drawingTimeSelectEl.classList.toggle("hidden", !canEditSettings);
+  drawingTimeDisplayEl.classList.toggle("hidden", canEditSettings);
+  if (canEditSettings && room.drawingTime) {
+    drawingTimeSelectEl.value = room.drawingTime;
+  }
+  if (!canEditSettings && room.drawingTime) {
+    drawingTimeDisplayEl.textContent = `${room.drawingTime} seconds`;
+  }
+
+  hintCountSelectEl.classList.toggle("hidden", !canEditSettings);
+  hintCountDisplayEl.classList.toggle("hidden", canEditSettings);
+  if (canEditSettings && room.hintCount !== undefined) {
+    hintCountSelectEl.value = room.hintCount;
+  }
+  if (!canEditSettings && room.hintCount !== undefined) {
+    hintCountDisplayEl.textContent = room.hintCount === 0 ? "No hints" : `${room.hintCount} hint${room.hintCount !== 1 ? "s" : ""}`;
   }
 
   const canStart =
     amLeader &&
-    (currentGameStatus === "LOBBY" || currentGameStatus === "ROUND_END") &&
+    currentGameStatus === "LOBBY" &&
     roomPlayerCount >= 2;
   startGameBtn.classList.toggle("hidden", !canStart);
-  startGameBtn.textContent =
-    currentGameStatus === "ROUND_END" ? "Start Next Round" : "Start Game";
+  startGameBtn.textContent = "Start Game";
+  startGameBtn.disabled = false;
 
   // ---- Game sidebar ----
   sidebarRoomCode.textContent = room.id;
   sidebarPlayerCount.textContent = `${room.playerCount} / ${room.maxPlayers}`;
-  if (selectedCategory) {
-    sidebarCategory.textContent = `${CATEGORY_EMOJI[selectedCategory] || "📂"} ${selectedCategory}`;
-  } else {
-    sidebarCategory.textContent = "🔒 None";
-  }
 
   // Game header
   gameRoundEl.textContent = room.round
@@ -745,11 +814,12 @@ function renderRoom(room) {
   });
 
   renderWordBanner();
+  updateChatDisabledState();
+  refreshIcons();
 }
 
 // ---------------------------------------------------------------------------
 // Word banner
-// ---------------------------------------------------------------------------
 function renderWordOptions() {
   if (wordOptions.length === 0) {
     gameWordBannerEl.textContent = "Pick your word!";
@@ -762,7 +832,10 @@ function renderWordOptions() {
     btn.type = "button";
     btn.className = "word-option";
     btn.textContent = w;
-    btn.addEventListener("click", () => socket.emit("choose_word", { word: w }));
+    btn.addEventListener("click", () => {
+      document.querySelectorAll('.word-option').forEach((b) => { b.disabled = true; });
+      socket.emit("choose_word", { word: w });
+    });
     wrap.appendChild(btn);
   });
   gameWordBannerEl.innerHTML = "";
@@ -789,14 +862,20 @@ function renderWordBanner() {
         ? `Word: <span class="word">${myWord}</span>`
         : "Word: …";
     } else if (wordLength > 0) {
-      gameWordBannerEl.innerHTML = `<span class="guess-label">Guess the word:</span> <span class="blanks">${"_ ".repeat(wordLength).trim()}</span>`;
-      gameWordDisplayEl.innerHTML = `Word: <span class="blanks">${"_ ".repeat(wordLength).trim()}</span>`;
+      let blanks = "";
+      for (let i = 0; i < wordLength; i++) {
+        const found = revealedLetters.find((r) => r.index === i);
+        blanks += found ? found.letter : "_";
+        if (i < wordLength - 1) blanks += " ";
+      }
+      gameWordBannerEl.innerHTML = `<span class="guess-label">Guess the word:</span> <span class="blanks">${blanks}</span>`;
+      gameWordDisplayEl.innerHTML = `Word: <span class="blanks">${blanks}</span>`;
     } else {
       gameWordBannerEl.textContent = "Guess the word!";
       gameWordDisplayEl.innerHTML = "Word: -----";
     }
   } else if (currentGameStatus === "ROUND_END") {
-    gameWordBannerEl.textContent = "Round complete! The leader can start the next round.";
+    gameWordBannerEl.textContent = "Round complete!";
     gameWordDisplayEl.innerHTML = "Word: -----";
   } else {
     gameWordBannerEl.textContent = "Waiting for the game to start…";
@@ -830,6 +909,8 @@ let shapeStartY = 0;
 const drawHistory = [];
 let currentStrokeEntry = null;
 let selfClearing = false;
+let isRemoteDrawing = false;
+let drawShapeAtPointerUp = "freehand";
 
 function resetDrawHistory() {
   drawHistory.length = 0;
@@ -958,6 +1039,7 @@ canvas.addEventListener("pointerdown", (e) => {
 
   isDrawing = true;
   canvas.setPointerCapture(e.pointerId);
+  drawShapeAtPointerUp = currentShape;
 
   const { x, y } = getPos(e);
   shapeStartX = x;
@@ -996,15 +1078,15 @@ function endStroke() {
   if (!isDrawing) return;
   isDrawing = false;
 
-  if (currentShape !== "freehand" && !eraserActive) {
+  if (drawShapeAtPointerUp !== "freehand" && !eraserActive) {
     shapePreviewCtx.clearRect(0, 0, shapePreviewCanvas.width, shapePreviewCanvas.height);
     const color = colorInput.value;
     const lineWidth = Number(brushSizeInput.value);
-    commitShape(shapeStartX, shapeStartY, lastPointerX, lastPointerY, color, lineWidth, currentShape);
-    drawHistory.push({ type: "shape", x1: shapeStartX, y1: shapeStartY, x2: lastPointerX, y2: lastPointerY, color, lineWidth, shape: currentShape });
+    commitShape(shapeStartX, shapeStartY, lastPointerX, lastPointerY, color, lineWidth, drawShapeAtPointerUp);
+    drawHistory.push({ type: "shape", x1: shapeStartX, y1: shapeStartY, x2: lastPointerX, y2: lastPointerY, color, lineWidth, shape: drawShapeAtPointerUp });
     socket.emit("draw_start", {
       x: shapeStartX, y: shapeStartY, color, lineWidth,
-      shape: currentShape, x2: lastPointerX, y2: lastPointerY,
+      shape: drawShapeAtPointerUp, x2: lastPointerX, y2: lastPointerY,
     });
   } else {
     if (currentStrokeEntry) {
@@ -1017,7 +1099,6 @@ function endStroke() {
 
 canvas.addEventListener("pointerup", endStroke);
 canvas.addEventListener("pointercancel", endStroke);
-canvas.addEventListener("pointerleave", endStroke);
 
 clearCanvasBtn.addEventListener("click", () => {
   if (!amCurrentDrawer()) return;
@@ -1035,6 +1116,28 @@ undoBtn.addEventListener("click", () => {
 // ---------------------------------------------------------------------------
 // Chat (unified helper — renders to whichever view is active)
 // ---------------------------------------------------------------------------
+const PLAYER_COLORS = [
+  "#5b9bf5", "#2ecc71", "#f5a623", "#e056a0",
+  "#00d1b2", "#ff6b6b", "#a78bfa", "#f97316",
+  "#34d399", "#f472b6", "#60a5fa", "#fbbf24",
+];
+const SYSTEM_COLOR = "#a49dc7";
+
+function getPlayerColor(username) {
+  let h = 0;
+  for (let i = 0; i < username.length; i++) {
+    h = ((h << 5) - h + username.charCodeAt(i)) | 0;
+  }
+  return PLAYER_COLORS[Math.abs(h) % PLAYER_COLORS.length];
+}
+
+function formatChatTime() {
+  const d = new Date();
+  const h = d.getHours().toString().padStart(2, "0");
+  const m = d.getMinutes().toString().padStart(2, "0");
+  return h + ":" + m;
+}
+
 function renderChatMessage(entry, targetEl) {
   if (!targetEl) return;
   const div = document.createElement("div");
@@ -1044,25 +1147,52 @@ function renderChatMessage(entry, targetEl) {
     div.classList.add("system");
     div.textContent = entry.message;
   } else {
+    const isSelf = entry.socketId === socket.id;
+    const color = getPlayerColor(entry.username);
+
     const name = document.createElement("span");
-    name.className = "chat-name" + (entry.socketId === socket.id ? " self" : "");
+    name.className = "chat-name" + (isSelf ? " self" : "");
     name.textContent = entry.username;
+    name.style.color = color;
 
     const text = document.createElement("span");
+    text.className = "chat-text";
     text.textContent = entry.message;
 
-    div.appendChild(name);
-    div.appendChild(text);
+    const wrapper = document.createElement("span");
+    wrapper.style.display = "contents";
+    wrapper.appendChild(name);
+    wrapper.appendChild(text);
+
+    const time = document.createElement("span");
+    time.className = "chat-time";
+    time.textContent = formatChatTime();
+
+    div.appendChild(wrapper);
+    div.appendChild(time);
   }
 
   targetEl.appendChild(div);
-  targetEl.scrollTop = targetEl.scrollHeight;
+  autoScrollIfNeeded(targetEl);
+}
+
+function autoScrollIfNeeded(el) {
+  const threshold = 120;
+  const atBottom = el.scrollHeight - el.scrollTop - el.clientHeight < threshold;
+  if (atBottom) {
+    el.scrollTop = el.scrollHeight;
+  }
 }
 
 function sendChat(text) {
   const activeInput = isGameActive() ? chatInputGameEl : chatInputLobbyEl;
+  if (activeInput.disabled) return;
   const message = (text !== undefined ? text : activeInput.value).trim();
   if (!message) return;
+  if (!socket.connected) {
+    showToast("Not connected — message not sent.");
+    return;
+  }
   socket.emit("chat_message", { message });
   activeInput.value = "";
   activeInput.focus();
@@ -1084,11 +1214,17 @@ let reactionThumbsUp = 0;
 let reactionHeart = 0;
 
 reactThumbsUpBtn.addEventListener("click", () => {
+  if (hasReactedThisTurn) return;
+  hasReactedThisTurn = true;
   socket.emit("reaction", { type: "thumbsup" });
+  updateReactionState();
 });
 
 reactHeartBtn.addEventListener("click", () => {
+  if (hasReactedThisTurn) return;
+  hasReactedThisTurn = true;
   socket.emit("reaction", { type: "heart" });
+  updateReactionState();
 });
 
 // ---------------------------------------------------------------------------
@@ -1141,7 +1277,8 @@ const sounds = {
 };
 
 function updateSoundIcon() {
-  soundToggleBtn.textContent = soundOn ? "🔊" : "🔇";
+  soundToggleBtn.innerHTML = soundOn ? lucideIcon("volume-2") : lucideIcon("volume-x");
+  refreshIcons();
 }
 
 soundToggleBtn.addEventListener("click", () => {
@@ -1285,11 +1422,16 @@ socket.on("turn_started", (data) => {
   choosingPhase = !!data.choosing;
   wordLength = 0;
   wordOptions = [];
+  hasReactedThisTurn = false;
+  revealedLetters = [];
   turnDuration = data.choosing ? data.choiceTime || 15 : data.turnDuration || 60;
   gameTimerFillEl.style.width = "100%";
   gameTimerFillEl.classList.remove("low");
   resetDrawHistory();
   renderWordBanner();
+  updateChatDisabledState();
+  updateReactionState();
+  updateToolbarState();
   sounds.turn();
 });
 
@@ -1303,9 +1445,14 @@ socket.on("word_chosen", (data) => {
   wordOptions = [];
   wordLength = data.wordLength;
   turnDuration = data.turnDuration || 60;
+  maxHints = data.hintCount !== undefined ? data.hintCount : 2;
+  revealedLetters = [];
   gameTimerFillEl.style.width = "100%";
   gameTimerFillEl.classList.remove("low");
   renderWordBanner();
+  updateChatDisabledState();
+  updateReactionState();
+  updateToolbarState();
 });
 
 socket.on("your_word", (data) => {
@@ -1321,6 +1468,11 @@ socket.on("turn_ended", (data) => {
   myWord = null;
   choosingPhase = false;
   wordOptions = [];
+  hasReactedThisTurn = false;
+  revealedLetters = [];
+  updateChatDisabledState();
+  updateReactionState();
+  updateToolbarState();
   if (data.reason === "left") {
     gameWordBannerEl.textContent = `${data.drawerName} left — next turn!`;
   } else if (data.reason === "all_guessed") {
@@ -1330,15 +1482,35 @@ socket.on("turn_ended", (data) => {
   }
 });
 
+socket.on("hint_revealed", (data) => {
+  revealedLetters.push({ index: data.index, letter: data.letter });
+  renderWordBanner();
+});
+
 socket.on("round_ended", () => {
   myWord = null;
   wordLength = 0;
+  hasReactedThisTurn = false;
+  revealedLetters = [];
+  updateChatDisabledState();
+  updateReactionState();
   renderWordBanner();
+});
+
+socket.on("round_starting", (data) => {
+  const nextRound = data.nextRound;
+  const countdown = data.countdown;
+  gameWordBannerEl.innerHTML = `Round ${nextRound} starting in <span class="word">${countdown}</span>…`;
+  gameWordDisplayEl.innerHTML = `Round ${nextRound}`;
 });
 
 socket.on("game_aborted", (data) => {
   myWord = null;
   wordLength = 0;
+  hasReactedThisTurn = false;
+  revealedLetters = [];
+  updateChatDisabledState();
+  updateReactionState();
   gameWordBannerEl.textContent = data.message || "Game aborted.";
   renderWordBanner();
 });
@@ -1348,10 +1520,28 @@ socket.on("game_over", () => {
   wordLength = 0;
   choosingPhase = false;
   wordOptions = [];
+  hasReactedThisTurn = false;
+  revealedLetters = [];
+  updateChatDisabledState();
+  updateReactionState();
+  updateToolbarState();
+});
+
+socket.on("game_restarting", (data) => {
+  const countdown = data.countdown;
+  let restartEl = document.getElementById("game-restart-countdown");
+  if (!restartEl) {
+    restartEl = document.createElement("p");
+    restartEl.id = "game-restart-countdown";
+    restartEl.style.cssText = "color:var(--muted);font-size:0.85rem;margin-top:0.5rem;";
+    winnerTextEl.parentNode.insertBefore(restartEl, winnerTextEl.nextSibling);
+  }
+  restartEl.textContent = `New game starting in ${countdown}s…`;
 });
 
 // ---- Remote drawing ----
 socket.on("draw_start", (data) => {
+  isRemoteDrawing = true;
   if (data.shape === "fill") {
     floodFill(Math.round(data.x), Math.round(data.y), data.color);
   } else if (data.shape && data.shape !== "freehand") {
@@ -1363,10 +1553,11 @@ socket.on("draw_start", (data) => {
 });
 
 socket.on("draw", (data) => {
+  if (!isRemoteDrawing) return;
   extendStroke(data.x, data.y);
 });
 
-socket.on("draw_end", () => {});
+socket.on("draw_end", () => { isRemoteDrawing = false; });
 
 socket.on("clear_canvas", () => {
   clearCanvas();
@@ -1397,6 +1588,8 @@ socket.on("chat_history", (history) => {
     renderChatMessage(entry, chatMessagesLobbyEl);
     renderChatMessage(entry, chatMessagesGameEl);
   });
+  chatMessagesLobbyEl.scrollTop = chatMessagesLobbyEl.scrollHeight;
+  chatMessagesGameEl.scrollTop = chatMessagesGameEl.scrollHeight;
 });
 
 // ---- Reactions ----
@@ -1407,6 +1600,11 @@ socket.on("reaction", (data) => {
   } else if (data.type === "heart") {
     reactionHeart = (data.count || 0);
     reactionHeartCountEl.textContent = reactionHeart;
+  }
+  // If the current user already reacted (tracked server-side), lock the buttons
+  if (data.userReactions && data.userReactions[socket.id]) {
+    hasReactedThisTurn = true;
+    updateReactionState();
   }
 });
 
