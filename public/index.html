@@ -142,6 +142,11 @@
 
         <!-- Center: Canvas Area -->
         <div class="game-center">
+          <div id="mobile-game-header" class="mobile-game-header">
+            <span id="mobile-room-code" class="mobile-room-code">------</span>
+            <span id="mobile-round-info" class="mobile-round-info">Round 1 / 3</span>
+            <span id="mobile-timer" class="mobile-timer">—</span>
+          </div>
           <div class="game-header">
             <span id="game-round" class="game-round-info">Round 1 / 3</span>
             <div class="game-word-info">
@@ -191,6 +196,15 @@
           <div class="canvas-stage" id="canvas-stage">
             <canvas id="drawing-canvas" width="800" height="500"></canvas>
             <canvas id="shape-preview-canvas" width="800" height="500"></canvas>
+          </div>
+
+          <div id="mobile-player-bar" class="mobile-player-bar">
+            <button id="mobile-player-toggle" class="mobile-player-toggle" type="button">
+              <span class="mobile-player-label">Players</span>
+              <span id="mobile-player-count" class="mobile-player-count">0 / 5</span>
+              <span class="mobile-player-chevron">▾</span>
+            </button>
+            <ul id="mobile-player-list" class="mobile-player-list"></ul>
           </div>
         </div>
 

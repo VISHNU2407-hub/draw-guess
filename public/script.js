@@ -75,6 +75,14 @@ const colorsPanel = document.getElementById("colors-panel");
 const shapesToggle = document.getElementById("shapes-toggle");
 const shapesPanel = document.getElementById("shapes-panel");
 
+// Mobile game header
+const mobileRoomCodeEl = document.getElementById("mobile-room-code");
+const mobileRoundInfoEl = document.getElementById("mobile-round-info");
+const mobileTimerEl = document.getElementById("mobile-timer");
+const mobilePlayerListEl = document.getElementById("mobile-player-list");
+const mobilePlayerCountEl = document.getElementById("mobile-player-count");
+const mobilePlayerToggleBtn = document.getElementById("mobile-player-toggle");
+
 // Chat (two instances)
 const chatMessagesLobbyEl = document.getElementById("chat-messages-lobby");
 const chatInputLobbyEl = document.getElementById("chat-input-lobby");
@@ -512,6 +520,16 @@ sidebarToggleBtn.addEventListener("click", () => {
   refreshIcons();
 });
 
+// Mobile player bar toggle
+if (mobilePlayerToggleBtn) {
+  mobilePlayerToggleBtn.addEventListener("click", () => {
+    const bar = document.getElementById("mobile-player-bar");
+    bar.classList.toggle("expanded");
+    const chevron = mobilePlayerToggleBtn.querySelector(".mobile-player-chevron");
+    if (chevron) chevron.textContent = bar.classList.contains("expanded") ? "▴" : "▾";
+  });
+}
+
 function resetRoomUI() {
   currentGameStatus = "LOBBY";
   document.body.dataset.gameStatus = "LOBBY";
@@ -557,6 +575,7 @@ function resetRoomUI() {
   clearCanvas();
   playerListEl.innerHTML = "";
   sidebarPlayerList.innerHTML = "";
+  if (mobilePlayerListEl) mobilePlayerListEl.innerHTML = "";
   gameWordBannerEl.textContent = "Waiting for players to join…";
   gameRoundEl.textContent = "Round —";
   gameTimerEl.textContent = "—";
@@ -719,6 +738,11 @@ function renderRoom(room) {
   gameDrawerEl.textContent = currentDrawerName ? `Drawer: ${currentDrawerName}` : "Drawer: —";
   updateTimerDisplay(room.turnTimer);
 
+  // Mobile game header
+  if (mobileRoomCodeEl) mobileRoomCodeEl.textContent = room.id;
+  if (mobileRoundInfoEl) mobileRoundInfoEl.textContent = room.round ? `${room.round} / ${room.totalRounds}` : "— / —";
+  if (mobileTimerEl) mobileTimerEl.textContent = room.turnTimer != null ? room.turnTimer + "s" : "—";
+
   // Scoreboard modal on game over
   if (currentGameStatus === "GAME_OVER") {
     showScoreboard(room.players);
@@ -813,6 +837,52 @@ function renderRoom(room) {
     sidebarPlayerList.appendChild(li);
   });
 
+  // ---- Build player list (mobile bar) ----
+  if (mobilePlayerListEl) {
+    mobilePlayerListEl.innerHTML = "";
+    mobilePlayerCountEl.textContent = `${room.playerCount} / ${room.maxPlayers}`;
+    room.players.forEach((player) => {
+      const li = document.createElement("li");
+      li.dataset.sid = player.socketId;
+      if (player.socketId === currentDrawerId) li.classList.add("drawing");
+
+      const avatar = document.createElement("span");
+      avatar.className = "player-avatar";
+      avatar.textContent = avatarLetter(player.username);
+      avatar.style.background = avatarColor(player.username);
+
+      const name = document.createElement("span");
+      name.className = "player-name";
+      name.textContent = player.username;
+      if (player.socketId === socket.id) name.textContent += " (you)";
+
+      li.appendChild(avatar);
+      li.appendChild(name);
+
+      if (player.isLeader) {
+        const badge = document.createElement("span");
+        badge.className = "leader-badge";
+        badge.textContent = "LEADER";
+        li.appendChild(badge);
+      }
+
+      if (room.correctGuessers && room.correctGuessers.includes(player.socketId)) {
+        const badge = document.createElement("span");
+        badge.className = "guess-badge";
+        badge.textContent = "✓";
+        badge.title = "Guessed correctly";
+        li.appendChild(badge);
+      }
+
+      const score = document.createElement("span");
+      score.className = "player-score";
+      score.textContent = `${player.score || 0} pts`;
+      li.appendChild(score);
+
+      mobilePlayerListEl.appendChild(li);
+    });
+  }
+
   renderWordBanner();
   updateChatDisabledState();
   refreshIcons();
@@ -888,6 +958,10 @@ function updateTimerDisplay(seconds) {
   if (currentGameStatus === "PLAYING" && typeof seconds === "number") {
     gameTimerEl.textContent = `${seconds}s`;
     gameTimerEl.classList.toggle("low", seconds <= 10);
+    if (mobileTimerEl) {
+      mobileTimerEl.textContent = `${seconds}s`;
+      mobileTimerEl.classList.toggle("low", seconds <= 10);
+    }
 
     const pct = Math.max(0, Math.min(100, (seconds / turnDuration) * 100));
     gameTimerFillEl.style.width = `${pct}%`;
@@ -895,6 +969,10 @@ function updateTimerDisplay(seconds) {
   } else {
     gameTimerEl.textContent = "—";
     gameTimerEl.classList.remove("low");
+    if (mobileTimerEl) {
+      mobileTimerEl.textContent = "—";
+      mobileTimerEl.classList.remove("low");
+    }
     gameTimerFillEl.style.width = "0%";
     gameTimerFillEl.classList.remove("low");
   }
