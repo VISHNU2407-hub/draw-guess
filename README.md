@@ -29,6 +29,8 @@ A real-time multiplayer drawing and guessing game — skribbl-style, built with 
 ├── words.js           # Server-only category word banks + selection logic
 ├── package.json
 ├── render.yaml        # Render Blueprint (optional, zero-config deploy)
+├── railway.json       # Railway config (optional, zero-config deploy)
+├── Procfile           # web: npm start (used by Railway and other platforms)
 ├── public/
 │   ├── index.html     # Lobby + room UI
 │   ├── style.css
@@ -88,6 +90,25 @@ The server listens on `0.0.0.0` and uses `process.env.PORT` (defaults to `3000`)
 5. **Test multiplayer after deployment:** open the deployed URL in two browser windows (or two phones), create a room in one, join with the code in the other, pick a category, and start the game.
 
 > **Note:** Rooms live in memory only. On Render's **free** plan, the instance sleeps after ~15 minutes of inactivity, which drops all active rooms (players reconnect to an empty lobby). A running game keeps the instance awake. For persistent rooms across sleeps, upgrade to a paid plan or add a database-backed room store.
+
+## Railway Deployment
+
+1. Push this repo to GitHub and import it on [Railway](https://railway.com) (New Project → Deploy from GitHub repo).
+2. Railway auto-detects `railway.json` and uses:
+   - **Build:** `npm install`
+   - **Start:** `npm start`
+3. Railway injects `PORT` automatically — no environment variables are required.
+4. After deploy, verify the health endpoint:
+
+   ```
+   https://YOUR-PROJECT.up.railway.app/health
+   ```
+
+   → `{ "status": "ok" }`
+
+5. **Test multiplayer after deployment:** open the deployed URL in two browser windows (or two phones), create a room in one, join with the code in the other, pick a category, and start the game.
+
+> **Note:** Rooms live in memory only. Railway apps restart when redeployed or when the service is stopped, which drops all active rooms. A `Procfile` (`web: npm start`) is included for any platform that uses it, and the `railway.json` sets a `/health` healthcheck so Railway keeps the service running.
 
 ### Optional environment variables
 
