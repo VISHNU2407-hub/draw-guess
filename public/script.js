@@ -75,13 +75,29 @@ const colorsPanel = document.getElementById("colors-panel");
 const shapesToggle = document.getElementById("shapes-toggle");
 const shapesPanel = document.getElementById("shapes-panel");
 
-// Mobile game header
-const mobileRoomCodeEl = document.getElementById("mobile-room-code");
+// Mobile game header + controls
 const mobileRoundInfoEl = document.getElementById("mobile-round-info");
 const mobileTimerEl = document.getElementById("mobile-timer");
+const mobileMenuBtn = document.getElementById("mobile-menu-btn");
+const mobileSoundBtn = document.getElementById("mobile-sound-btn");
+const mobileGuessRow = document.getElementById("mobile-guess-row");
+const mobileGuessInput = document.getElementById("mobile-guess-input");
+const mobileGuessSend = document.getElementById("mobile-guess-send");
+const mobileHintsEl = document.getElementById("mobile-hints");
 const mobilePlayerListEl = document.getElementById("mobile-player-list");
 const mobilePlayerCountEl = document.getElementById("mobile-player-count");
-const mobilePlayerToggleBtn = document.getElementById("mobile-player-toggle");
+const mobileSheetRoomCodeEl = document.getElementById("mobile-sheet-room-code");
+const mobileDrawTimeEl = document.getElementById("mobile-draw-time");
+const mobileHintCountEl = document.getElementById("mobile-hint-count");
+const mobileRoundsEl = document.getElementById("mobile-rounds");
+const mobileLeaveBtn = document.getElementById("mobile-leave-btn");
+const mobileInviteBtn = document.getElementById("mobile-invite-btn");
+
+// Mobile bottom sheet
+const mobileSheetEl = document.getElementById("game-chat");
+const mobileSheetBackdrop = document.getElementById("mobile-sheet-backdrop");
+const sheetCloseBtn = document.getElementById("sheet-close-btn");
+const sheetTabBtns = document.querySelectorAll(".sheet-tab");
 
 // Chat (two instances)
 const chatMessagesLobbyEl = document.getElementById("chat-messages-lobby");
@@ -388,6 +404,7 @@ function updateChatDisabledState() {
   chatInputGameEl.disabled = isDrawer;
   chatSendBtnGameEl.disabled = isDrawer;
   chatInputGameEl.placeholder = isDrawer ? "You are drawing…" : "Type your guess…";
+  updateMobileUI();
 }
 
 function updateReactionState() {
@@ -402,6 +419,61 @@ function updateReactionState() {
 
 function isGameActive() {
   return currentGameStatus === "PLAYING" || currentGameStatus === "ROUND_END";
+}
+
+// True when this client is the drawer, including during the word-choosing phase.
+function isCurrentDrawer() {
+  return currentGameStatus === "PLAYING" && socket.id === currentDrawerId;
+}
+
+function formatTime(sec) {
+  if (typeof sec !== "number" || !isFinite(sec)) return "—";
+  const s = Math.max(0, Math.round(sec));
+  const m = Math.floor(s / 60);
+  const r = s % 60;
+  return `${String(m).padStart(2, "0")}:${String(r).padStart(2, "0")}`;
+}
+
+// ---------------------------------------------------------------------------
+// Mobile UI helpers (no-ops on desktop where these elements are hidden)
+// ---------------------------------------------------------------------------
+function updateMobileHints() {
+  if (!mobileHintsEl) return;
+  if (currentGameStatus === "PLAYING" && wordLength > 0 && !isCurrentDrawer()) {
+    const used = revealedLetters.length;
+    const total = maxHints;
+    if (total <= 0) {
+      mobileHintsEl.textContent = "No hints";
+    } else if (used >= total) {
+      mobileHintsEl.textContent = "No hints left";
+    } else {
+      mobileHintsEl.textContent = `Hints: ${total - used} left`;
+    }
+  } else {
+    mobileHintsEl.textContent = "";
+  }
+}
+
+function updateMobileMode() {
+  if (!roomGameEl) return;
+  const inActiveGame = currentGameStatus === "PLAYING";
+  const isDrawer = isCurrentDrawer();
+  roomGameEl.classList.toggle("mode-drawer", inActiveGame && isDrawer);
+  roomGameEl.classList.toggle("mode-guesser", inActiveGame && !isDrawer);
+  roomGameEl.classList.toggle("mode-idle", !inActiveGame);
+}
+
+function updateMobileGuessState() {
+  if (!mobileGuessRow) return;
+  const show = currentGameStatus === "PLAYING" && !isCurrentDrawer() && !choosingPhase;
+  mobileGuessRow.classList.toggle("hidden", !show);
+  if (mobileGuessInput) mobileGuessInput.disabled = !show;
+  if (mobileGuessSend) mobileGuessSend.disabled = !show;
+}
+
+function updateMobileUI() {
+  updateMobileMode();
+  updateMobileGuessState();
 }
 
 usernameInput.value = localStorage.getItem("dg-username") || "";
@@ -520,15 +592,46 @@ sidebarToggleBtn.addEventListener("click", () => {
   refreshIcons();
 });
 
-// Mobile player bar toggle
-if (mobilePlayerToggleBtn) {
-  mobilePlayerToggleBtn.addEventListener("click", () => {
-    const bar = document.getElementById("mobile-player-bar");
-    bar.classList.toggle("expanded");
-    const chevron = mobilePlayerToggleBtn.querySelector(".mobile-player-chevron");
-    if (chevron) chevron.textContent = bar.classList.contains("expanded") ? "▴" : "▾";
+// Mobile bottom sheet (Chat / Players / More)
+function setSheetTab(name) {
+  sheetTabBtns.forEach((b) => {
+    b.classList.toggle("active", b.dataset.sheetTab === name);
   });
+  document.querySelectorAll(".sheet-pane").forEach((p) => {
+    p.classList.toggle("active", p.dataset.pane === name);
+  });
+  if (name === "chat") {
+    requestAnimationFrame(() => {
+      chatMessagesGameEl.scrollTop = chatMessagesGameEl.scrollHeight;
+    });
+  }
 }
+
+function openSheet(name) {
+  if (!mobileSheetEl) return;
+  mobileSheetEl.classList.add("sheet-open");
+  if (name) setSheetTab(name);
+}
+
+function closeSheet() {
+  if (!mobileSheetEl) return;
+  mobileSheetEl.classList.remove("sheet-open");
+}
+
+sheetTabBtns.forEach((btn) => {
+  btn.addEventListener("click", () => {
+    const name = btn.dataset.sheetTab;
+    if (btn.classList.contains("active") && mobileSheetEl && mobileSheetEl.classList.contains("sheet-open")) {
+      closeSheet();
+    } else {
+      openSheet(name);
+    }
+  });
+});
+
+if (sheetCloseBtn) sheetCloseBtn.addEventListener("click", closeSheet);
+if (mobileSheetBackdrop) mobileSheetBackdrop.addEventListener("click", closeSheet);
+if (mobileMenuBtn) mobileMenuBtn.addEventListener("click", () => openSheet("more"));
 
 function resetRoomUI() {
   currentGameStatus = "LOBBY";
@@ -576,6 +679,9 @@ function resetRoomUI() {
   playerListEl.innerHTML = "";
   sidebarPlayerList.innerHTML = "";
   if (mobilePlayerListEl) mobilePlayerListEl.innerHTML = "";
+  if (mobileGuessRow) mobileGuessRow.classList.add("hidden");
+  if (mobileHintsEl) mobileHintsEl.textContent = "";
+  closeSheet();
   gameWordBannerEl.textContent = "Waiting for players to join…";
   gameRoundEl.textContent = "Round —";
   gameTimerEl.textContent = "—";
@@ -673,6 +779,7 @@ function renderRoom(room) {
 
   choosingPhase = currentGameStatus === "PLAYING" && room.phase === "choosing";
   wordLength = room.wordLength || 0;
+  maxHints = room.maxHints !== undefined ? room.maxHints : (room.hintCount !== undefined ? room.hintCount : 2);
   if (room.revealedLetters && room.phase === "drawing") {
     revealedLetters = room.revealedLetters;
   }
@@ -738,10 +845,13 @@ function renderRoom(room) {
   gameDrawerEl.textContent = currentDrawerName ? `Drawer: ${currentDrawerName}` : "Drawer: —";
   updateTimerDisplay(room.turnTimer);
 
-  // Mobile game header
-  if (mobileRoomCodeEl) mobileRoomCodeEl.textContent = room.id;
+  // Mobile game header + more pane
+  if (mobileSheetRoomCodeEl) mobileSheetRoomCodeEl.textContent = room.id;
   if (mobileRoundInfoEl) mobileRoundInfoEl.textContent = room.round ? `${room.round} / ${room.totalRounds}` : "— / —";
-  if (mobileTimerEl) mobileTimerEl.textContent = room.turnTimer != null ? room.turnTimer + "s" : "—";
+  if (mobileTimerEl) mobileTimerEl.textContent = room.turnTimer != null ? formatTime(room.turnTimer) : "—";
+  if (mobileDrawTimeEl) mobileDrawTimeEl.textContent = room.drawingTime ? `${room.drawingTime} sec` : "—";
+  if (mobileHintCountEl) mobileHintCountEl.textContent = room.hintCount !== undefined ? `${room.hintCount}` : "—";
+  if (mobileRoundsEl) mobileRoundsEl.textContent = room.totalRounds ? `${room.totalRounds}` : "—";
 
   // Scoreboard modal on game over
   if (currentGameStatus === "GAME_OVER") {
@@ -885,6 +995,7 @@ function renderRoom(room) {
 
   renderWordBanner();
   updateChatDisabledState();
+  updateMobileUI();
   refreshIcons();
 }
 
@@ -952,6 +1063,7 @@ function renderWordBanner() {
     gameWordDisplayEl.innerHTML = "Word: -----";
   }
   canvas.style.cursor = amCurrentDrawer() ? "crosshair" : "default";
+  updateMobileHints();
 }
 
 function updateTimerDisplay(seconds) {
@@ -959,7 +1071,7 @@ function updateTimerDisplay(seconds) {
     gameTimerEl.textContent = `${seconds}s`;
     gameTimerEl.classList.toggle("low", seconds <= 10);
     if (mobileTimerEl) {
-      mobileTimerEl.textContent = `${seconds}s`;
+      mobileTimerEl.textContent = formatTime(seconds);
       mobileTimerEl.classList.toggle("low", seconds <= 10);
     }
 
@@ -1285,6 +1397,37 @@ chatInputLobbyEl.addEventListener("keydown", (e) => {
   if (e.key === "Enter") sendChat();
 });
 
+// Mobile guess input (guessers only) — sends through chat so the server can
+// detect correct guesses. Same rules as sendChat().
+function sendMobileGuess() {
+  if (!mobileGuessInput || mobileGuessInput.disabled) return;
+  const message = mobileGuessInput.value.trim();
+  if (!message) return;
+  if (!socket.connected) {
+    showToast("Not connected — message not sent.");
+    return;
+  }
+  socket.emit("chat_message", { message });
+  mobileGuessInput.value = "";
+  mobileGuessInput.focus();
+}
+
+if (mobileGuessSend) mobileGuessSend.addEventListener("click", sendMobileGuess);
+if (mobileGuessInput) {
+  mobileGuessInput.addEventListener("keydown", (e) => {
+    if (e.key === "Enter") sendMobileGuess();
+  });
+}
+
+// Mobile invite + leave
+if (mobileInviteBtn) mobileInviteBtn.addEventListener("click", copyInvite);
+if (mobileLeaveBtn) {
+  mobileLeaveBtn.addEventListener("click", () => {
+    socket.emit("leave_room");
+    resetRoomUI();
+  });
+}
+
 // ---------------------------------------------------------------------------
 // Reactions
 // ---------------------------------------------------------------------------
@@ -1355,16 +1498,21 @@ const sounds = {
 };
 
 function updateSoundIcon() {
-  soundToggleBtn.innerHTML = soundOn ? lucideIcon("volume-2") : lucideIcon("volume-x");
+  const icon = soundOn ? lucideIcon("volume-2") : lucideIcon("volume-x");
+  soundToggleBtn.innerHTML = icon;
+  if (mobileSoundBtn) mobileSoundBtn.innerHTML = icon;
   refreshIcons();
 }
 
-soundToggleBtn.addEventListener("click", () => {
+function toggleSound() {
   soundOn = !soundOn;
   localStorage.setItem("dg-sound", soundOn ? "on" : "off");
   updateSoundIcon();
   if (soundOn) beep(660, 0.1, 0.05);
-});
+}
+
+soundToggleBtn.addEventListener("click", toggleSound);
+if (mobileSoundBtn) mobileSoundBtn.addEventListener("click", toggleSound);
 
 updateSoundIcon();
 
@@ -1505,6 +1653,7 @@ socket.on("turn_started", (data) => {
   turnDuration = data.choosing ? data.choiceTime || 15 : data.turnDuration || 60;
   gameTimerFillEl.style.width = "100%";
   gameTimerFillEl.classList.remove("low");
+  updateTimerDisplay(turnDuration);
   resetDrawHistory();
   renderWordBanner();
   updateChatDisabledState();
@@ -1527,6 +1676,7 @@ socket.on("word_chosen", (data) => {
   revealedLetters = [];
   gameTimerFillEl.style.width = "100%";
   gameTimerFillEl.classList.remove("low");
+  updateTimerDisplay(turnDuration);
   renderWordBanner();
   updateChatDisabledState();
   updateReactionState();

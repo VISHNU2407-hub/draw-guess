@@ -1118,7 +1118,7 @@ body:has(#room-game:not(.hidden)) .title-bar {
   font-size: 0.85rem;
   font-family: inherit;
   color: var(--text);
-  background: rgba(12, 9, 26, 0.7);
+  background: #ffffff;
   border: 1px solid var(--panel-border);
   border-radius: 8px;
   outline: none;
@@ -1126,13 +1126,13 @@ body:has(#room-game:not(.hidden)) .title-bar {
 }
 .chat-input-row input:focus {
   border-color: var(--accent);
-  box-shadow: 0 0 0 3px rgba(124, 111, 240, 0.2);
+  box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.15);
 }
-.chat-input-row input::placeholder { color: #6a6390; }
+.chat-input-row input::placeholder { color: #b0b8c4; }
 .chat-input-row input:disabled {
   opacity: 0.5;
   cursor: not-allowed;
-  background: rgba(12, 9, 26, 0.4);
+  background: #f8fafc;
 }
 .chat-input-row .btn:disabled {
   opacity: 0.5;
@@ -1157,25 +1157,25 @@ body:has(#room-game:not(.hidden)) .title-bar {
 .chat-messages::-webkit-scrollbar-thumb,
 .player-list::-webkit-scrollbar-thumb,
 .sidebar-player-list::-webkit-scrollbar-thumb {
-  background: rgba(255, 255, 255, 0.12);
+  background: rgba(148, 163, 184, 0.4);
   border-radius: 999px;
 }
 .chat-messages::-webkit-scrollbar-thumb:hover {
-  background: rgba(255, 255, 255, 0.22);
+  background: rgba(148, 163, 184, 0.65);
 }
 
 /* Firefox scrollbar */
 .chat-messages {
   scrollbar-width: thin;
-  scrollbar-color: rgba(255, 255, 255, 0.12) transparent;
+  scrollbar-color: rgba(148, 163, 184, 0.4) transparent;
 }
 
 /* ---- Scoreboard modal ---- */
 .modal {
   position: fixed;
   inset: 0;
-  background: rgba(8, 6, 18, 0.72);
-  backdrop-filter: blur(6px);
+  background: rgba(15, 23, 42, 0.55);
+  backdrop-filter: blur(4px);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -1195,18 +1195,14 @@ body:has(#room-game:not(.hidden)) .title-bar {
   max-width: 420px;
   width: 100%;
   text-align: center;
-  backdrop-filter: blur(14px);
-  box-shadow: 0 24px 64px rgba(0, 0, 0, 0.6), inset 0 1px 0 rgba(255, 255, 255, 0.06);
+  box-shadow: var(--shadow-lg);
   animation: rise 0.3s ease-out;
 }
 .modal-title {
   font-size: 1.7rem;
   font-weight: 900;
   margin-bottom: 0.5rem;
-  background: linear-gradient(120deg, #ffd76a, #ff9ff3);
-  -webkit-background-clip: text;
-  background-clip: text;
-  -webkit-text-fill-color: transparent;
+  color: var(--accent);
 }
 .winner-text {
   color: var(--accent);
@@ -1228,14 +1224,14 @@ body:has(#room-game:not(.hidden)) .title-bar {
   align-items: center;
   gap: 0.6rem;
   padding: 0.6rem 0.85rem;
-  background: rgba(20, 16, 38, 0.55);
+  background: #f8fafc;
   border: 1px solid var(--panel-border);
   border-radius: 10px;
 }
 .scoreboard-list li.winner {
   border-color: var(--gold);
-  background: rgba(80, 66, 40, 0.35);
-  box-shadow: 0 0 16px rgba(247, 183, 49, 0.25);
+  background: #fffbeb;
+  box-shadow: 0 0 16px rgba(245, 158, 11, 0.2);
 }
 .scoreboard-list .rank {
   font-weight: 900;
@@ -1369,14 +1365,14 @@ body:has(#room-game:not(.hidden)) .title-bar {
   bottom: 1.5rem;
   transform: translateX(-50%);
   z-index: 300;
-  background: rgba(20, 16, 38, 0.96);
-  color: var(--text);
-  border: 1px solid var(--panel-border);
+  background: #1a2332;
+  color: #ffffff;
+  border: 1px solid rgba(255, 255, 255, 0.12);
   border-radius: 12px;
   padding: 0.7rem 1.2rem;
   font-weight: 700;
   font-size: 0.95rem;
-  box-shadow: 0 12px 32px rgba(0, 0, 0, 0.5);
+  box-shadow: 0 12px 32px rgba(0, 0, 0, 0.3);
   max-width: 90vw;
   text-align: center;
   animation: toast-in 0.25s ease-out;
@@ -1787,4 +1783,817 @@ input:focus-visible,
 select:focus-visible {
   outline: 2px solid var(--accent);
   outline-offset: 2px;
+}
+
+/* ============================================
+   MOBILE RESPONSIVE OVERRIDE (dedicated mobile UI)
+   Base styles for the mobile-only sheet + controls
+   ============================================ */
+.mobile-menu-btn,
+.mobile-sound-btn,
+.mobile-hints,
+.mobile-guess-row,
+.mobile-sheet-backdrop,
+.mobile-sheet-tabs {
+  display: none;
+}
+
+/* The status row wraps the word banner; on desktop it is transparent so the
+   banner stays a direct flex child of .game-center (unchanged desktop layout). */
+.game-status-row {
+  display: contents;
+}
+
+/* Bottom sheet panes: only the active pane is shown (desktop shows Chat only) */
+.sheet-tab-content {
+  flex: 1;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+}
+.sheet-pane {
+  display: none;
+  flex: 1;
+  min-height: 0;
+  flex-direction: column;
+}
+.sheet-pane.active {
+  display: flex;
+}
+
+/* Make the in-room container fill the viewport on non-desktop screens so
+   the full-height game (and scrollable lobby) layout resolves correctly. */
+@media (max-width: 1099px) {
+  #room-view {
+    height: 100%;
+    min-height: 0;
+    display: flex;
+    flex-direction: column;
+  }
+}
+
+/* ============================================
+   MOBILE PHONES — portrait gameplay UI
+   Priority: CANVAS > TIMER/WORD/HINTS > TOOLS > GUESS > PLAYERS > CHAT
+   ============================================ */
+@media (max-width: 719px) {
+  body {
+    padding: 0.6rem;
+    padding-top: calc(0.6rem + env(safe-area-inset-top));
+    padding-bottom: calc(0.6rem + env(safe-area-inset-bottom));
+  }
+  body:has(#room-view:not(.hidden)) {
+    padding: 0;
+  }
+  .app {
+    max-width: none;
+  }
+  .game-title {
+    font-size: 1.6rem;
+  }
+  .sound-toggle {
+    width: 40px;
+    height: 40px;
+    font-size: 1rem;
+  }
+  .room-code {
+    font-size: 1.4rem;
+    letter-spacing: 3px;
+  }
+
+  /* ---- Mobile lobby: clean vertical layout ---- */
+  .room-header {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 0.6rem;
+  }
+  .room-code-box {
+    width: 100%;
+  }
+  .room-code-row {
+    justify-content: space-between;
+  }
+  .room-meta {
+    justify-content: space-between;
+  }
+  .room-layout {
+    grid-template-columns: 1fr;
+    gap: 0.75rem;
+  }
+  .lobby-center {
+    gap: 0.75rem;
+  }
+  .lobby-welcome {
+    padding: 1.2rem 1rem;
+  }
+  .lobby-welcome h2 {
+    font-size: 1.1rem;
+  }
+  .lobby-chat {
+    height: 42vh;
+    min-height: 240px;
+  }
+  .players-area h3,
+  .chat-panel h3 {
+    font-size: 0.7rem;
+  }
+
+  /* ---- Game screen fills the viewport ---- */
+  #room-view {
+    height: 100%;
+    min-height: 0;
+    display: flex;
+    flex-direction: column;
+  }
+  .room-game {
+    flex: 1 1 auto;
+    height: auto;
+    min-height: 0;
+    grid-template-columns: 1fr;
+    grid-template-rows: 1fr;
+  }
+  .game-sidebar {
+    display: none;
+  }
+
+  /* ---- Compact game header: menu / round / sound / timer ---- */
+  .mobile-game-header {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    padding: calc(0.4rem + env(safe-area-inset-top)) 0.6rem 0.4rem;
+    background: var(--panel);
+    border-bottom: 1px solid var(--panel-border);
+    flex-shrink: 0;
+    z-index: 5;
+  }
+  .mobile-menu-btn,
+  .mobile-sound-btn {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 40px;
+    height: 40px;
+    border: 1px solid var(--panel-border);
+    border-radius: var(--radius-sm);
+    background: #f8fafc;
+    color: var(--muted);
+    cursor: pointer;
+  }
+  .mobile-menu-btn:active,
+  .mobile-sound-btn:active {
+    background: #e2e8f0;
+  }
+  .mobile-round-info {
+    flex: 1;
+    text-align: center;
+    font-size: 0.78rem;
+    font-weight: 800;
+    color: var(--muted);
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+  .mobile-timer {
+    min-width: 58px;
+    text-align: center;
+    font-size: 1.15rem;
+    font-weight: 900;
+    font-variant-numeric: tabular-nums;
+    color: var(--text);
+    background: var(--accent-light);
+    border: 1px solid #dbeafe;
+    border-radius: 999px;
+    padding: 0.2rem 0.6rem;
+  }
+  .mobile-timer.low {
+    color: #fff;
+    background: var(--danger);
+    border-color: var(--danger);
+    animation: pulse 1s infinite;
+  }
+
+  /* ---- Game center: canvas is the priority ---- */
+  .game-center {
+    display: flex;
+    flex-direction: column;
+    min-height: 0;
+    min-width: 0;
+    padding: 0.3rem 0.45rem calc(56px + env(safe-area-inset-bottom));
+    overflow: hidden;
+  }
+  .game-header {
+    display: none;
+  }
+  .timer-bar {
+    display: none;
+  }
+
+  .game-status-row {
+    display: flex;
+    align-items: stretch;
+    gap: 0.4rem;
+    margin-bottom: 0.3rem;
+    flex-shrink: 0;
+  }
+  .game-word-banner {
+    flex: 1;
+    min-height: 2.2rem;
+    margin-bottom: 0;
+    padding: 0.4rem 0.5rem;
+    font-size: 0.85rem;
+    letter-spacing: 0.4px;
+  }
+  .mobile-hints {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 0 0.6rem;
+    font-size: 0.7rem;
+    font-weight: 800;
+    color: var(--accent);
+    background: var(--accent-light);
+    border: 1px solid #dbeafe;
+    border-radius: var(--radius-sm);
+    white-space: nowrap;
+    flex-shrink: 0;
+  }
+  .mobile-hints:empty {
+    display: none;
+  }
+
+  .canvas-stage {
+    flex: 1 1 0;
+    min-height: 120px;
+  }
+  #drawing-canvas {
+    max-width: 100%;
+    max-height: 100%;
+  }
+
+  /* Canvas directly under the word row; tools + guess input below it */
+  .mobile-game-header {
+    order: 1;
+  }
+  .game-status-row {
+    order: 2;
+  }
+  .canvas-stage {
+    order: 3;
+  }
+  .canvas-toolbar {
+    order: 4;
+  }
+  .mobile-guess-row {
+    order: 5;
+  }
+
+  /* ---- Toolbar: compact; only the toolbar may scroll horizontally ---- */
+  .canvas-toolbar {
+    padding: 0.3rem 0.4rem;
+    gap: 0.3rem;
+    margin-bottom: 0.3rem;
+    flex-wrap: nowrap;
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+    scrollbar-width: none;
+  }
+  .canvas-toolbar::-webkit-scrollbar {
+    display: none;
+  }
+  #colors-toggle,
+  #shapes-toggle,
+  #color-indicator,
+  .toolbar-separator,
+  .size-label {
+    display: none;
+  }
+  .tool-dropdown-panel {
+    position: static;
+    display: block;
+    box-shadow: none;
+    border: none;
+    background: transparent;
+    padding: 0;
+    min-width: 0;
+  }
+  .palette {
+    flex-wrap: nowrap;
+    gap: 0.25rem;
+  }
+  .palette .swatch {
+    width: 26px;
+    height: 26px;
+  }
+  .shape-btn {
+    width: 38px;
+    height: 38px;
+    font-size: 1.1rem;
+  }
+  .canvas-toolbar .btn-small {
+    padding: 0.5rem 0.7rem;
+    font-size: 0.8rem;
+    min-height: 38px;
+    white-space: nowrap;
+  }
+  .canvas-toolbar input[type="range"] {
+    width: 58px;
+    accent-color: var(--accent);
+  }
+  .size-adj-btn {
+    width: 30px;
+    height: 30px;
+  }
+  #shapes-dropdown {
+    order: 1;
+  }
+  #eraser-btn-game {
+    order: 2;
+  }
+  #undo-btn-game {
+    order: 3;
+  }
+  #fill-btn-game {
+    order: 4;
+  }
+  #clear-canvas-btn-game {
+    order: 5;
+  }
+  #colors-dropdown {
+    order: 6;
+  }
+  .size-adj-btn,
+  .canvas-toolbar input[type="range"] {
+    order: 7;
+  }
+
+  /* ---- Guess input (guessers only) ---- */
+  .mobile-guess-row {
+    display: flex;
+    gap: 0.45rem;
+    flex-shrink: 0;
+    margin-bottom: 0.3rem;
+  }
+  .mobile-guess-row input {
+    flex: 1;
+    min-width: 0;
+    padding: 0.7rem 0.9rem;
+    font-size: 16px; /* prevents iOS auto-zoom on focus */
+    font-family: inherit;
+    color: var(--text);
+    background: var(--panel);
+    border: 1px solid var(--panel-border);
+    border-radius: var(--radius-sm);
+    outline: none;
+  }
+  .mobile-guess-row input:focus {
+    border-color: var(--accent);
+    box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.15);
+  }
+  .mobile-guess-row input::placeholder {
+    color: #b0b8c4;
+  }
+  .mobile-guess-send {
+    width: auto;
+    min-width: 78px;
+    min-height: 46px;
+    font-size: 0.95rem;
+    border-radius: var(--radius-sm);
+  }
+
+  /* ---- Bottom sheet: Chat / Players / More ---- */
+  .game-chat {
+    position: fixed;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    z-index: 40;
+    border-left: none;
+    border-top: 1px solid var(--panel-border);
+    border-radius: 18px 18px 0 0;
+    background: var(--panel);
+    box-shadow: 0 -8px 30px rgba(0, 0, 0, 0.14);
+    max-height: 38dvh;
+    transform: translateY(calc(100% - 48px));
+    transition: transform 0.28s cubic-bezier(0.32, 0.72, 0, 1);
+    display: flex;
+    flex-direction: column;
+    padding-bottom: env(safe-area-inset-bottom);
+    overflow: hidden;
+  }
+  .game-chat.sheet-open {
+    transform: translateY(0);
+  }
+  .mobile-sheet-backdrop {
+    display: block;
+    position: fixed;
+    inset: 0;
+    z-index: 39;
+    background: rgba(10, 14, 24, 0.45);
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 0.25s;
+  }
+  .game-chat.sheet-open ~ .mobile-sheet-backdrop,
+  body:has(.game-chat.sheet-open) .mobile-sheet-backdrop {
+    opacity: 1;
+    pointer-events: auto;
+  }
+
+  .mobile-sheet-tabs {
+    display: flex;
+    align-items: center;
+    gap: 0.2rem;
+    flex-shrink: 0;
+    min-height: 48px;
+    padding: 0.2rem 0.35rem;
+    border-bottom: 1px solid var(--panel-border);
+  }
+  .sheet-tab {
+    flex: 1;
+    height: 40px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.3rem;
+    border: none;
+    background: transparent;
+    color: var(--muted);
+    font-family: inherit;
+    font-size: 0.8rem;
+    font-weight: 800;
+    border-radius: var(--radius-sm);
+    cursor: pointer;
+  }
+  .sheet-tab.active {
+    color: var(--accent);
+    background: var(--accent-light);
+  }
+  .sheet-tab-count {
+    font-size: 0.68rem;
+    color: inherit;
+  }
+  .sheet-close {
+    width: 40px;
+    height: 40px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border: none;
+    background: transparent;
+    color: var(--muted);
+    cursor: pointer;
+    border-radius: var(--radius-sm);
+    flex-shrink: 0;
+  }
+  .sheet-close:active {
+    background: #f1f5f9;
+  }
+
+  .sheet-tab-content {
+    flex: 1;
+    min-height: 0;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+  }
+  .sheet-pane {
+    display: none;
+    flex: 1;
+    min-height: 0;
+    flex-direction: column;
+    padding: 0.5rem;
+    overflow: hidden;
+  }
+  .sheet-pane.active {
+    display: flex;
+  }
+  .sheet-pane-title {
+    font-size: 0.68rem;
+    font-weight: 800;
+    color: var(--muted);
+    text-transform: uppercase;
+    letter-spacing: 1.5px;
+    margin-bottom: 0.4rem;
+    flex-shrink: 0;
+  }
+
+  /* Chat pane */
+  .sheet-pane[data-pane="chat"] {
+    padding: 0.3rem;
+  }
+  .game-chat .chat-panel {
+    height: 100%;
+    padding: 0.2rem 0.15rem 0.15rem;
+  }
+  .game-chat .chat-panel h3 {
+    font-size: 0.62rem;
+    margin-bottom: 0.15rem;
+  }
+  .game-chat .chat-messages {
+    gap: 0.12rem;
+    padding: 0.15rem 0.1rem 0.3rem 0.1rem;
+  }
+  .game-chat .chat-msg {
+    padding: 0.3rem 0.5rem;
+    font-size: 0.8rem;
+    line-height: 1.3;
+  }
+  .game-chat .chat-msg .chat-name {
+    font-size: 0.72rem;
+  }
+  .game-chat .chat-msg .chat-time {
+    font-size: 0.56rem;
+  }
+  .game-chat .chat-input-row {
+    margin-top: 0.2rem;
+  }
+  .game-chat .chat-input-row input {
+    padding: 0.6rem 0.75rem;
+    font-size: 16px;
+    background: #fff;
+    color: var(--text);
+    border: 1px solid var(--panel-border);
+  }
+  .game-chat .chat-input-row input:focus {
+    border-color: var(--accent);
+    box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.15);
+  }
+  .game-chat .chat-input-row input::placeholder {
+    color: var(--muted);
+  }
+  .game-chat .chat-input-row .btn {
+    padding: 0.55rem 0.75rem;
+    min-height: 42px;
+    font-size: 0.8rem;
+  }
+
+  /* Players pane */
+  .mobile-player-list {
+    list-style: none;
+    display: flex;
+    flex-direction: column;
+    gap: 0.35rem;
+    overflow-y: auto;
+    padding-right: 0.2rem;
+  }
+  .mobile-player-list li {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 0.5rem 0.65rem;
+    background: #f8fafc;
+    border: 1px solid var(--panel-border);
+    border-radius: var(--radius-sm);
+    font-size: 0.85rem;
+  }
+  .mobile-player-list li.drawing {
+    border-color: var(--accent);
+    box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+  }
+  .mobile-player-list .player-avatar {
+    width: 26px;
+    height: 26px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: 900;
+    font-size: 0.72rem;
+    color: #fff;
+    flex-shrink: 0;
+  }
+  .mobile-player-list .player-name {
+    flex: 1;
+    font-weight: 700;
+    color: var(--text);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+  .mobile-player-list .leader-badge {
+    font-size: 0.5rem;
+    font-weight: 900;
+    letter-spacing: 0.5px;
+    padding: 0.1rem 0.3rem;
+    border-radius: 999px;
+    background: #fef3c7;
+    color: #92400e;
+  }
+  .mobile-player-list .guess-badge {
+    width: 18px;
+    height: 18px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 50%;
+    background: #dcfce7;
+    color: #166534;
+    font-size: 0.6rem;
+    font-weight: 900;
+    flex-shrink: 0;
+  }
+  .mobile-player-list .player-score {
+    font-size: 0.72rem;
+    font-weight: 800;
+    color: var(--success);
+    white-space: nowrap;
+  }
+
+  /* More pane */
+  .sheet-pane[data-pane="more"] {
+    gap: 0.6rem;
+    overflow-y: auto;
+  }
+  .more-room-box,
+  .more-settings-box {
+    background: #f8fafc;
+    border: 1px solid var(--panel-border);
+    border-radius: var(--radius-sm);
+    padding: 0.6rem 0.75rem;
+  }
+  .more-room-box {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+  }
+  .more-room-box .more-row {
+    flex: 1;
+  }
+  .more-room-box .invite-btn {
+    margin-left: 0.5rem;
+  }
+  .more-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 0.6rem;
+    padding: 0.3rem 0;
+  }
+  .more-label {
+    font-size: 0.78rem;
+    font-weight: 700;
+    color: var(--muted);
+  }
+  .more-value {
+    font-size: 0.85rem;
+    font-weight: 800;
+    color: var(--text);
+  }
+  .more-room-code {
+    font-family: "Consolas", "Courier New", monospace;
+    font-size: 0.9rem;
+    font-weight: 900;
+    letter-spacing: 2px;
+    color: var(--accent);
+  }
+  #mobile-leave-btn {
+    margin-top: 0.2rem;
+  }
+
+  /* Comfortable touch targets */
+  .btn {
+    min-height: 42px;
+  }
+  .room-note {
+    margin-top: 0.5rem;
+  }
+  .modal-panel {
+    padding: 1.4rem 1.1rem;
+  }
+  .modal-title {
+    font-size: 1.35rem;
+  }
+  .word-option {
+    min-height: 44px;
+    font-size: 0.95rem;
+  }
+}
+
+/* ============================================
+   MOBILE LANDSCAPE — players | canvas | chat
+   ============================================ */
+@media (max-width: 1099px) and (orientation: landscape) and (max-height: 560px) {
+  .room-game {
+    grid-template-columns: 120px minmax(0, 1fr) 200px;
+    grid-template-rows: 1fr;
+  }
+
+  .game-sidebar {
+    display: flex;
+  }
+  .sidebar-toggle-btn {
+    display: none;
+  }
+  .sidebar-content {
+    padding: 0.4rem;
+    gap: 0.4rem;
+  }
+  .sidebar-player-list {
+    max-height: 130px;
+  }
+  .sidebar-note {
+    display: none;
+  }
+
+  .mobile-game-header,
+  .mobile-menu-btn,
+  .mobile-sound-btn,
+  .mobile-hints {
+    display: none;
+  }
+
+  .game-header {
+    display: flex;
+  }
+  .game-status-row {
+    display: contents;
+  }
+  .game-word-banner {
+    min-height: 1.6rem;
+    font-size: 0.8rem;
+    margin-bottom: 0.15rem;
+  }
+
+  .game-center {
+    padding: 0.2rem 0.35rem;
+  }
+  .canvas-stage {
+    flex: 1 1 0;
+    min-height: 60px;
+  }
+  .canvas-toolbar {
+    margin-bottom: 0.15rem;
+  }
+  .mobile-guess-row {
+    display: flex;
+    margin-bottom: 0.1rem;
+  }
+
+  /* Chat returns to a right-hand column */
+  .game-chat {
+    position: static;
+    transform: none;
+    border-radius: 0;
+    border-left: 1px solid var(--panel-border);
+    border-top: none;
+    box-shadow: none;
+    max-height: none;
+    padding-bottom: 0;
+    height: 100%;
+  }
+  .game-chat.sheet-open {
+    transform: none;
+  }
+  .mobile-sheet-backdrop {
+    display: none !important;
+  }
+  .mobile-sheet-tabs {
+    display: none;
+  }
+  .sheet-tab-content {
+    flex: 1;
+    min-height: 0;
+    display: flex;
+    flex-direction: column;
+  }
+  .sheet-pane {
+    display: none !important;
+  }
+  .sheet-pane[data-pane="chat"] {
+    display: flex !important;
+  }
+  .game-chat .chat-panel {
+    height: 100%;
+    padding: 0.35rem;
+  }
+}
+
+/* ---- Very small phones ---- */
+@media (max-width: 380px) {
+  .game-center {
+    padding-left: 0.3rem;
+    padding-right: 0.3rem;
+  }
+  .mobile-timer {
+    min-width: 50px;
+    font-size: 1rem;
+  }
+  .game-word-banner {
+    font-size: 0.78rem;
+    padding: 0.35rem 0.4rem;
+  }
+  .mobile-hints {
+    padding: 0 0.45rem;
+    font-size: 0.65rem;
+  }
+  .canvas-toolbar {
+    padding: 0.25rem 0.3rem;
+    gap: 0.25rem;
+  }
+  .mobile-guess-send {
+    min-width: 68px;
+  }
 }

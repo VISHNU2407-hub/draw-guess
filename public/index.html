@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover, interactive-widget=resizes-content" />
   <title>Draw &amp; Guess</title>
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
@@ -143,8 +143,9 @@
         <!-- Center: Canvas Area -->
         <div class="game-center">
           <div id="mobile-game-header" class="mobile-game-header">
-            <span id="mobile-room-code" class="mobile-room-code">------</span>
+            <button id="mobile-menu-btn" class="mobile-menu-btn" type="button" aria-label="Menu" title="Menu"><i data-lucide="menu"></i></button>
             <span id="mobile-round-info" class="mobile-round-info">Round 1 / 3</span>
+            <button id="mobile-sound-btn" class="mobile-sound-btn" type="button" aria-label="Toggle sounds" title="Toggle sounds"><i data-lucide="volume-2"></i></button>
             <span id="mobile-timer" class="mobile-timer">—</span>
           </div>
           <div class="game-header">
@@ -160,7 +161,10 @@
             </div>
           </div>
 
-          <div id="game-word-banner" class="game-word-banner">Waiting for the game to start…</div>
+          <div class="game-status-row">
+            <div id="game-word-banner" class="game-word-banner">Waiting for the game to start…</div>
+            <span id="mobile-hints" class="mobile-hints" title="Hints remaining"></span>
+          </div>
           <div id="game-timer-bar" class="timer-bar"><div id="game-timer-fill" class="timer-fill"></div></div>
 
           <div class="canvas-toolbar">
@@ -198,24 +202,51 @@
             <canvas id="shape-preview-canvas" width="800" height="500"></canvas>
           </div>
 
-          <div id="mobile-player-bar" class="mobile-player-bar">
-            <button id="mobile-player-toggle" class="mobile-player-toggle" type="button">
-              <span class="mobile-player-label">Players</span>
-              <span id="mobile-player-count" class="mobile-player-count">0 / 5</span>
-              <span class="mobile-player-chevron">▾</span>
-            </button>
-            <ul id="mobile-player-list" class="mobile-player-list"></ul>
+          <div id="mobile-guess-row" class="mobile-guess-row hidden">
+            <input id="mobile-guess-input" type="text" placeholder="Guess the word…" maxlength="200" autocomplete="off" />
+            <button id="mobile-guess-send" class="btn btn-primary mobile-guess-send">Send</button>
           </div>
         </div>
 
-        <!-- Right: Chat -->
-        <aside class="game-chat">
-          <div class="chat-panel">
-            <h3>Chat</h3>
-            <div id="chat-messages-game" class="chat-messages"></div>
-            <div class="chat-input-row">
-              <input id="chat-input-game" type="text" placeholder="Type your guess…" maxlength="200" autocomplete="off" />
-              <button id="chat-send-btn-game" class="btn btn-small">Send</button>
+        <!-- Right: Chat / Mobile bottom sheet -->
+        <div id="mobile-sheet-backdrop" class="mobile-sheet-backdrop"></div>
+        <aside id="game-chat" class="game-chat">
+          <div class="mobile-sheet-tabs">
+            <button class="sheet-tab active" data-sheet-tab="chat" type="button">Chat</button>
+            <button class="sheet-tab" data-sheet-tab="players" type="button">Players <span id="mobile-player-count" class="sheet-tab-count">0/5</span></button>
+            <button class="sheet-tab" data-sheet-tab="more" type="button">More</button>
+            <button id="sheet-close-btn" class="sheet-close" type="button" aria-label="Close panel"><i data-lucide="x"></i></button>
+          </div>
+          <div class="sheet-tab-content">
+            <div class="sheet-pane active" data-pane="chat">
+              <div class="chat-panel">
+                <h3>Chat</h3>
+                <div id="chat-messages-game" class="chat-messages"></div>
+                <div class="chat-input-row">
+                  <input id="chat-input-game" type="text" placeholder="Type your guess…" maxlength="200" autocomplete="off" />
+                  <button id="chat-send-btn-game" class="btn btn-small">Send</button>
+                </div>
+              </div>
+            </div>
+            <div class="sheet-pane" data-pane="players">
+              <h3 class="sheet-pane-title">Players</h3>
+              <ul id="mobile-player-list" class="mobile-player-list"></ul>
+            </div>
+            <div class="sheet-pane" data-pane="more">
+              <h3 class="sheet-pane-title">Game</h3>
+              <div class="more-room-box">
+                <div class="more-row">
+                  <span class="more-label">Room code</span>
+                  <span id="mobile-sheet-room-code" class="more-room-code">------</span>
+                </div>
+                <button id="mobile-invite-btn" class="btn btn-small invite-btn">Invite</button>
+              </div>
+              <div class="more-settings-box">
+                <div class="more-row"><span class="more-label">Drawing Time</span><span id="mobile-draw-time" class="more-value">60 sec</span></div>
+                <div class="more-row"><span class="more-label">Hints</span><span id="mobile-hint-count" class="more-value">2</span></div>
+                <div class="more-row"><span class="more-label">Rounds</span><span id="mobile-rounds" class="more-value">3</span></div>
+              </div>
+              <button id="mobile-leave-btn" class="btn leave-btn"><i data-lucide="log-out"></i> Leave Room</button>
             </div>
           </div>
         </aside>
