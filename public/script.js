@@ -1673,12 +1673,20 @@ window.addEventListener("orientationchange", () => {
 // Visual viewport / keyboard handling — keeps the game inside the visible area
 // so the canvas never disappears when the on-screen keyboard opens.
 // ---------------------------------------------------------------------------
+// `interactive-widget=resizes-content` (in the viewport meta) shrinks the
+// layout viewport on Chrome Android, so `innerHeight` alone cannot be compared
+// against the visual viewport to detect the keyboard. Track the largest layout
+// height seen and compare the visual viewport against it instead.
+let maxLayoutHeight = 0;
+
 function syncViewportHeight() {
   const vv = window.visualViewport;
   if (!vv) return;
   const avail = Math.max(220, Math.round(vv.height - (vv.offsetTop || 0)));
   document.documentElement.style.setProperty("--app-height", avail + "px");
-  const keyboardOpen = window.innerHeight - avail > 60;
+  const layoutH = window.innerHeight;
+  if (layoutH > maxLayoutHeight) maxLayoutHeight = layoutH;
+  const keyboardOpen = maxLayoutHeight - avail > 60;
   document.body.classList.toggle("keyboard-open", keyboardOpen);
   fitCanvasToStage();
 }
@@ -1687,6 +1695,10 @@ if (window.visualViewport) {
   window.visualViewport.addEventListener("scroll", syncViewportHeight);
 }
 window.addEventListener("resize", syncViewportHeight);
+window.addEventListener("orientationchange", () => {
+  maxLayoutHeight = 0;
+  setTimeout(syncViewportHeight, 150);
+});
 syncViewportHeight();
 
 // ---------------------------------------------------------------------------

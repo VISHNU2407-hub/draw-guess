@@ -2543,8 +2543,8 @@ select:focus-visible {
     overscroll-behavior: none;
   }
   body:has(#room-game:not(.hidden)) .app {
-    height: 100vh;
-    height: 100dvh;
+    height: var(--app-height, 100vh);
+    height: var(--app-height, 100dvh);
   }
 
   /* Game screen: flex column — center area on top, chat fixed at ~30% below.
@@ -2790,7 +2790,12 @@ select:focus-visible {
 
   /* ---- When the on-screen keyboard is open: keep the canvas visible ---- */
   body.keyboard-open .canvas-stage {
-    min-height: 130px;
+    min-height: 110px;
+  }
+  /* Chat shrinks toward 30% when the keyboard opens so the canvas keeps
+     priority; the input row stays visible right above the keyboard. */
+  body.keyboard-open .game-chat {
+    flex: 0 0 clamp(112px, 30%, 40dvh);
   }
   body.keyboard-open .mobile-category,
   body.keyboard-open .mobile-hints {
