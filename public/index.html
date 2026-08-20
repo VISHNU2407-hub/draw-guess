@@ -170,32 +170,37 @@
 
           <div class="canvas-toolbar">
             <div class="tool-dropdown" id="colors-dropdown">
-              <button class="tool-dropdown-btn" id="colors-toggle">Colors ▼</button>
+              <button class="tool-dropdown-btn" id="colors-toggle" title="Colors"><i data-lucide="palette"></i><svg class="tb-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><circle cx="13.5" cy="6.5" r=".5" fill="currentColor"/><circle cx="17.5" cy="10.5" r=".5" fill="currentColor"/><circle cx="8.5" cy="7.5" r=".5" fill="currentColor"/><circle cx="6.5" cy="12.5" r=".5" fill="currentColor"/><path d="M12 2C6.5 2 2 6.5 2 12s4.5 10 10 10c.926 0 1.648-.746 1.648-1.688 0-.437-.18-.835-.437-1.125-.29-.289-.438-.652-.438-1.125a1.64 1.64 0 0 1 1.668-1.668h1.996c3.051 0 5.555-2.503 5.555-5.554C21.965 6.012 17.461 2 12 2z"/></svg><span class="tool-btn-label">Colors ▼</span></button>
               <div class="tool-dropdown-panel" id="colors-panel">
                 <div id="color-palette-game" class="palette"></div>
               </div>
             </div>
             <span id="color-indicator" class="color-indicator" title="Current color"></span>
             <div class="tool-dropdown" id="shapes-dropdown">
-              <button class="tool-dropdown-btn" id="shapes-toggle">Shapes ▼</button>
+              <button class="tool-dropdown-btn" id="shapes-toggle" title="Shapes"><i data-lucide="shapes"></i><svg class="tb-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="M8.3 10a.7.7 0 0 1-.626-1.079L11.4 3a.7.7 0 0 1 1.198-.043L16.3 8.9a.7.7 0 0 1-.572 1.1Z"/><rect x="3" y="14" width="7" height="7" rx="1"/><circle cx="17.5" cy="17.5" r="3.5"/></svg><span class="tool-btn-label">Shapes ▼</span></button>
               <div class="tool-dropdown-panel" id="shapes-panel">
                 <div class="shapes-grid">
-                  <button class="shape-btn active" data-shape="freehand" title="Freehand"><i data-lucide="pencil"></i></button>
-                  <button class="shape-btn" data-shape="line" title="Line">╱</button>
-                  <button class="shape-btn" data-shape="rect" title="Rectangle">▭</button>
-                  <button class="shape-btn" data-shape="circle" title="Circle">◯</button>
+                  <button class="shape-btn active" data-shape="freehand" title="Freehand"><i data-lucide="pencil"></i><svg class="tb-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="M21.174 6.812a1 1 0 0 0-3.986-3.987L3.842 16.174a2 2 0 0 0-.5.83l-1.321 4.352a.5.5 0 0 0 .623.622l4.353-1.32a2 2 0 0 0 .83-.497z"/><path d="m15 5 4 4"/></svg></button>
+                  <button class="shape-btn" data-shape="line" title="Line"><span class="shape-glyph">╱</span><i data-lucide="minus"></i><svg class="tb-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="M5 12h14"/></svg></button>
+                  <button class="shape-btn" data-shape="rect" title="Rectangle"><span class="shape-glyph">▭</span><i data-lucide="square"></i><svg class="tb-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><rect x="3" y="3" width="18" height="18" rx="2"/></svg></button>
+                  <button class="shape-btn" data-shape="circle" title="Circle"><span class="shape-glyph">◯</span><i data-lucide="circle"></i><svg class="tb-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><circle cx="12" cy="12" r="10"/></svg></button>
                 </div>
               </div>
             </div>
-            <button id="eraser-btn-game" class="btn btn-small eraser-btn" title="Eraser"><i data-lucide="eraser"></i> Eraser</button>
-            <button id="undo-btn-game" class="btn btn-small" title="Undo last action">↶ Undo</button>
-            <button id="fill-btn-game" class="btn btn-small fill-btn" title="Fill area"><i data-lucide="paint-bucket"></i> Fill</button>
-            <button id="clear-canvas-btn-game" class="btn btn-small">Clear</button>
+            <button id="eraser-btn-game" class="btn btn-small eraser-btn" title="Eraser"><i data-lucide="eraser"></i><svg class="tb-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="m7 21-4.3-4.3c-1-1-1-2.5 0-3.4l9.6-9.6c1-1 2.5-1 3.4 0l5.6 5.6c1 1 1 2.5 0 3.4L13 21"/><path d="M22 21H7"/><path d="m5 11 9 9"/></svg><span class="tool-btn-label">Eraser</span></button>
+            <button id="undo-btn-game" class="btn btn-small" title="Undo last action"><i data-lucide="undo-2"></i><svg class="tb-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="M9 14 4 9l5-5"/><path d="M4 9h10.5a5.5 5.5 0 0 1 5.5 5.5v0a5.5 5.5 0 0 1-5.5 5.5H11"/></svg><span class="tool-btn-label">↶ Undo</span></button>
+            <button id="fill-btn-game" class="btn btn-small fill-btn" title="Fill area"><i data-lucide="paint-bucket"></i><svg class="tb-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="m19 11-8-8-8.6 8.6a2 2 0 0 0 0 2.8l5.2 5.2c.8.8 2 .8 2.8 0L19 11Z"/><path d="m5 2 5 5"/><path d="M2 13h15"/><path d="M22 20a2 2 0 1 1-4 0c0-1.6 1.7-2.4 2-4 .3 1.6 2 2.4 2 4Z"/></svg><span class="tool-btn-label">Fill</span></button>
+            <button id="clear-canvas-btn-game" class="btn btn-small" title="Clear"><i data-lucide="trash-2"></i><svg class="tb-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="M3 6h18"/><path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6"/><path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2"/><line x1="10" x2="10" y1="11" y2="17"/><line x1="14" x2="14" y1="11" y2="17"/></svg><span class="tool-btn-label">Clear</span></button>
             <div class="toolbar-separator"></div>
-            <span class="size-label">Size</span>
-            <button id="brush-size-down" class="size-adj-btn">−</button>
-            <input id="brush-size-input-game" type="range" min="1" max="30" value="4" />
-            <button id="brush-size-up" class="size-adj-btn">+</button>
+            <div class="tool-dropdown" id="size-dropdown">
+              <button class="tool-dropdown-btn" id="size-toggle" title="Brush size"><i data-lucide="circle"></i><svg class="tb-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><circle cx="12" cy="12" r="10"/></svg><span class="tool-btn-label">Size</span></button>
+              <div class="tool-dropdown-panel" id="size-panel">
+                <span class="size-label">Size</span>
+                <button id="brush-size-down" class="size-adj-btn" title="Decrease brush size">−</button>
+                <input id="brush-size-input-game" type="range" min="1" max="30" value="4" />
+                <button id="brush-size-up" class="size-adj-btn" title="Increase brush size">+</button>
+              </div>
+            </div>
           </div>
 
           <div class="canvas-stage" id="canvas-stage">
@@ -269,6 +274,6 @@
 
   <script src="/socket.io/socket.io.js"></script>
   <script src="script.js"></script>
-  <script>lucide.createIcons();</script>
+  <script>if (window.lucide && typeof lucide.createIcons === "function") lucide.createIcons();</script>
 </body>
 </html>

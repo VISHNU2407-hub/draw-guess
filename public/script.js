@@ -74,6 +74,8 @@ const colorsToggle = document.getElementById("colors-toggle");
 const colorsPanel = document.getElementById("colors-panel");
 const shapesToggle = document.getElementById("shapes-toggle");
 const shapesPanel = document.getElementById("shapes-panel");
+const sizeToggle = document.getElementById("size-toggle");
+const sizePanel = document.getElementById("size-panel");
 
 // Mobile game header + controls
 const mobileRoundInfoEl = document.getElementById("mobile-round-info");
@@ -297,6 +299,8 @@ function updateToolbarState() {
   colorsToggle.style.opacity = opacity;
   shapesToggle.style.pointerEvents = pointerEvents;
   shapesToggle.style.opacity = opacity;
+  sizeToggle.style.pointerEvents = pointerEvents;
+  sizeToggle.style.opacity = opacity;
   brushSizeInput.style.pointerEvents = pointerEvents;
   brushSizeInput.style.opacity = opacity;
   brushSizeDownBtn.style.pointerEvents = pointerEvents;
@@ -331,8 +335,60 @@ shapeBtns.forEach((btn) => {
 function closeAllDropdowns() {
   colorsPanel.classList.remove("open");
   shapesPanel.classList.remove("open");
+  sizePanel.classList.remove("open");
   colorsToggle.classList.remove("active");
   shapesToggle.classList.remove("active");
+  sizeToggle.classList.remove("active");
+}
+
+// ---------------------------------------------------------------------------
+// Mobile compact toolbar — popover panels
+// ---------------------------------------------------------------------------
+function isMobileToolbarLayout() {
+  return window.matchMedia("(max-width: 719px), (max-width: 820px) and (orientation: portrait)").matches;
+}
+
+function positionMobilePopup(panelEl) {
+  if (!isMobileToolbarLayout()) {
+    panelEl.style.position = "";
+    panelEl.style.top = "";
+    panelEl.style.left = "";
+    panelEl.style.maxHeight = "";
+    panelEl.style.overflowY = "";
+    return;
+  }
+  const toolbarEl = document.querySelector(".canvas-toolbar");
+  if (!toolbarEl) return;
+  const tr = toolbarEl.getBoundingClientRect();
+  const vw = window.innerWidth;
+  const vh = window.visualViewport ? window.visualViewport.height : window.innerHeight;
+  const gap = 6;
+  const maxHeight = Math.max(140, Math.round(vh * 0.42));
+
+  panelEl.style.position = "fixed";
+  panelEl.style.top = "0px";
+  panelEl.style.left = "0px";
+  panelEl.style.maxHeight = maxHeight + "px";
+  panelEl.style.overflowY = "auto";
+
+  const pw = panelEl.offsetWidth;
+  const ph = Math.min(panelEl.offsetHeight, maxHeight);
+
+  let top = tr.bottom + gap;
+  if (top + ph > vh - gap) {
+    top = tr.top - gap - ph;
+    if (top < gap) top = gap;
+  }
+  let left = Math.round(tr.left + tr.width / 2 - pw / 2);
+  left = Math.max(gap, Math.min(left, vw - pw - gap));
+
+  panelEl.style.top = top + "px";
+  panelEl.style.left = left + "px";
+}
+
+function repositionMobilePopups() {
+  const openPanel = document.querySelector(".tool-dropdown-panel.open");
+  if (openPanel) positionMobilePopup(openPanel);
 }
 
 colorsToggle.addEventListener("click", (e) => {
@@ -342,6 +398,7 @@ colorsToggle.addEventListener("click", (e) => {
   if (!isOpen) {
     colorsPanel.classList.add("open");
     colorsToggle.classList.add("active");
+    positionMobilePopup(colorsPanel);
   }
 });
 
@@ -352,6 +409,18 @@ shapesToggle.addEventListener("click", (e) => {
   if (!isOpen) {
     shapesPanel.classList.add("open");
     shapesToggle.classList.add("active");
+    positionMobilePopup(shapesPanel);
+  }
+});
+
+sizeToggle.addEventListener("click", (e) => {
+  e.stopPropagation();
+  const isOpen = sizePanel.classList.contains("open");
+  closeAllDropdowns();
+  if (!isOpen) {
+    sizePanel.classList.add("open");
+    sizeToggle.classList.add("active");
+    positionMobilePopup(sizePanel);
   }
 });
 
@@ -360,6 +429,14 @@ document.addEventListener("click", (e) => {
     closeAllDropdowns();
   }
 });
+
+window.addEventListener("resize", repositionMobilePopups);
+window.addEventListener("orientationchange", () => {
+  setTimeout(repositionMobilePopups, 150);
+});
+if (window.visualViewport) {
+  window.visualViewport.addEventListener("resize", repositionMobilePopups);
+}
 
 // Brush size
 brushSizeDownBtn.addEventListener("click", () => {
