@@ -100,6 +100,8 @@ function createRoom(roomId) {
     players: [],
     currentDrawer: null,
     currentWord: null,
+    currentCategory: null,
+    wordOptionCategories: {},
     gameStatus: "LOBBY",
     turnTimer: 0,
     correctGuesses: new Set(),
@@ -175,6 +177,7 @@ function getRoomSnapshot(room) {
     correctGuessers: Array.from(room.correctGuesses),
     phase: room.phase, // "idle" | "choosing" | "drawing" (so late joiners see the right banner)
     wordLength: room.currentWord ? room.currentWord.length : 0,
+    category: room.currentCategory || null,
     drawingTime: room.drawingTime || DEFAULT_DRAW_TIME,
     hintCount: room.hintCount !== undefined ? room.hintCount : DEFAULT_HINT_COUNT,
     revealedLetters: room.revealedLetters || [],
@@ -306,6 +309,8 @@ function startGame(roomId) {
   room.turnOrder = room.players.map((p) => p.socketId);
   room.turnIndex = 0;
   room.currentWord = null;
+  room.currentCategory = null;
+  room.wordOptionCategories = {};
   room.wordOptions = [];
   room.phase = "idle";
   room.correctGuesses = new Set();
@@ -354,6 +359,13 @@ function startTurn(roomId) {
     return;
   }
 
+  // Record which category each offered word came from (exact: options[i] is
+  // drawn from CATEGORY_NAMES[(categoryIndex + i) % len]).
+  room.wordOptionCategories = {};
+  options.forEach((w, i) => {
+    room.wordOptionCategories[w] = CATEGORY_NAMES[(room.categoryIndex + i) % CATEGORY_NAMES.length];
+  });
+
   // Advance category index for the next turn so different categories are used
   room.categoryIndex = (room.categoryIndex + WORD_OPTIONS_COUNT) % CATEGORY_NAMES.length;
 
@@ -362,6 +374,7 @@ function startTurn(roomId) {
 
   room.currentDrawer = drawerId;
   room.currentWord = null;
+  room.currentCategory = null;
   room.wordOptions = options;
   room.phase = "choosing";
   room.turnTimer = WORD_CHOICE_TIME;
@@ -395,10 +408,11 @@ function confirmWord(roomId, word) {
 
   const drawer = room.players.find((p) => p.socketId === room.currentDrawer);
   room.currentWord = word;
+  room.currentCategory = (room.wordOptionCategories || {})[word] || null;
   room.phase = "drawing";
   room.turnTimer = room.drawingTime || TURN_DURATION;
 
-  io.to(roomId).emit("word_chosen", { wordLength: word.length, turnDuration: room.drawingTime || TURN_DURATION, hintCount: room.hintCount || DEFAULT_HINT_COUNT });
+  io.to(roomId).emit("word_chosen", { wordLength: word.length, turnDuration: room.drawingTime || TURN_DURATION, hintCount: room.hintCount || DEFAULT_HINT_COUNT, category: room.currentCategory });
   io.to(room.currentDrawer).emit("your_word", { word });
   systemMessage(roomId, `${drawer ? drawer.username : "The drawer"} is drawing — ${word.length} letters.`);
   broadcastRoom(roomId);
@@ -431,6 +445,7 @@ function endTurn(roomId, reason) {
 
   room.currentDrawer = null;
   room.currentWord = null;
+  room.currentCategory = null;
   room.wordOptions = [];
   room.phase = "idle";
   room.turnTimer = 0;
@@ -451,6 +466,7 @@ function finishGame(roomId, reason) {
   room.gameStatus = "GAME_OVER";
   room.currentDrawer = null;
   room.currentWord = null;
+  room.currentCategory = null;
   room.wordOptions = [];
   room.phase = "idle";
   room.turnTimer = 0;
@@ -487,6 +503,7 @@ function endRound(roomId) {
 
   room.currentDrawer = null;
   room.currentWord = null;
+  room.currentCategory = null;
   room.wordOptions = [];
   room.phase = "idle";
   room.turnTimer = 0;
@@ -969,6 +986,8 @@ function handlePlayerLeft(roomId, socketId, label) {
       room.round = 0;
       room.currentDrawer = null;
       room.currentWord = null;
+      room.currentCategory = null;
+      room.wordOptionCategories = {};
       room.turnTimer = 0;
       room.turnOrder = [];
       room.wordOptions = [];

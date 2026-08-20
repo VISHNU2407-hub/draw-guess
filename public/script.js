@@ -84,6 +84,7 @@ const mobileGuessRow = document.getElementById("mobile-guess-row");
 const mobileGuessInput = document.getElementById("mobile-guess-input");
 const mobileGuessSend = document.getElementById("mobile-guess-send");
 const mobileHintsEl = document.getElementById("mobile-hints");
+const mobileCategoryEl = document.getElementById("mobile-category");
 const mobilePlayerListEl = document.getElementById("mobile-player-list");
 const mobilePlayerCountEl = document.getElementById("mobile-player-count");
 const mobileSheetRoomCodeEl = document.getElementById("mobile-sheet-room-code");
@@ -118,6 +119,7 @@ const waitingTextEl = document.getElementById("waiting-text");
 // Game state (mirrored from the server)
 // ---------------------------------------------------------------------------
 let currentGameStatus = "LOBBY";
+let prevGameStatus = "LOBBY";
 let currentDrawerId = null;
 let roomPlayerCount = 0;
 let amLeader = false;
@@ -130,6 +132,7 @@ let currentDrawerName = null;
 let hasReactedThisTurn = false;
 let revealedLetters = [];
 let maxHints = 2;
+let currentCategory = null;
 
 // ---------------------------------------------------------------------------
 // Color palette
@@ -442,15 +445,29 @@ function updateMobileHints() {
   if (currentGameStatus === "PLAYING" && wordLength > 0 && !isCurrentDrawer()) {
     const used = revealedLetters.length;
     const total = maxHints;
+    let txt;
     if (total <= 0) {
-      mobileHintsEl.textContent = "No hints";
+      txt = "No hints";
     } else if (used >= total) {
-      mobileHintsEl.textContent = "No hints left";
+      txt = "No hints left";
     } else {
-      mobileHintsEl.textContent = `Hints: ${total - used} left`;
+      txt = `Hints left: ${total - used}`;
     }
+    mobileHintsEl.innerHTML = `${lucideIcon("lightbulb")} ${txt}`;
+    refreshIcons();
   } else {
-    mobileHintsEl.textContent = "";
+    mobileHintsEl.innerHTML = "";
+  }
+}
+
+function updateMobileCategory() {
+  if (!mobileCategoryEl) return;
+  if (currentCategory && currentGameStatus === "PLAYING") {
+    mobileCategoryEl.textContent = `Category: ${currentCategory}`;
+    mobileCategoryEl.classList.remove("hidden");
+  } else {
+    mobileCategoryEl.textContent = "";
+    mobileCategoryEl.classList.add("hidden");
   }
 }
 
@@ -609,23 +626,20 @@ function setSheetTab(name) {
 
 function openSheet(name) {
   if (!mobileSheetEl) return;
+  mobileSheetEl.classList.remove("minimized");
   mobileSheetEl.classList.add("sheet-open");
   if (name) setSheetTab(name);
 }
 
 function closeSheet() {
   if (!mobileSheetEl) return;
+  mobileSheetEl.classList.add("minimized");
   mobileSheetEl.classList.remove("sheet-open");
 }
 
 sheetTabBtns.forEach((btn) => {
   btn.addEventListener("click", () => {
-    const name = btn.dataset.sheetTab;
-    if (btn.classList.contains("active") && mobileSheetEl && mobileSheetEl.classList.contains("sheet-open")) {
-      closeSheet();
-    } else {
-      openSheet(name);
-    }
+    openSheet(btn.dataset.sheetTab);
   });
 });
 
@@ -642,6 +656,7 @@ function resetRoomUI() {
   amLeader = false;
   myWord = null;
   wordLength = 0;
+  currentCategory = null;
   turnDuration = 60;
   choosingPhase = false;
   wordOptions = [];
@@ -773,6 +788,12 @@ function renderRoom(room) {
 
   currentGameStatus = room.gameStatus;
   document.body.dataset.gameStatus = currentGameStatus;
+
+  // When a round starts, make sure the chat/guess input is visible on mobile
+  if (currentGameStatus === "PLAYING" && prevGameStatus !== "PLAYING") {
+    openSheet("chat");
+  }
+  prevGameStatus = currentGameStatus;
   currentDrawerId = room.currentDrawer;
   roomPlayerCount = room.playerCount;
   amLeader = room.players.some((p) => p.socketId === socket.id && p.isLeader);
@@ -780,6 +801,7 @@ function renderRoom(room) {
   choosingPhase = currentGameStatus === "PLAYING" && room.phase === "choosing";
   wordLength = room.wordLength || 0;
   maxHints = room.maxHints !== undefined ? room.maxHints : (room.hintCount !== undefined ? room.hintCount : 2);
+  currentCategory = room.category || null;
   if (room.revealedLetters && room.phase === "drawing") {
     revealedLetters = room.revealedLetters;
   }
@@ -1025,11 +1047,14 @@ function renderWordOptions() {
 
 function renderWordBanner() {
   const amDrawer = currentGameStatus === "PLAYING" && socket.id === currentDrawerId;
+  const catPrefix = currentCategory
+    ? `<span class="game-category-label">${currentCategory}</span> · `
+    : "";
 
   if (choosingPhase) {
     if (amDrawer) {
       renderWordOptions();
-      gameWordDisplayEl.innerHTML = "Word: <span style='color:#a49dc7'>Choose one below</span>";
+      gameWordDisplayEl.innerHTML = "Word: <span style='color:var(--accent)'>Choose one below</span>";
     } else {
       gameWordBannerEl.textContent = `${currentDrawerName || "Someone"} is choosing a word…`;
       gameWordDisplayEl.innerHTML = "Word: -----";
@@ -1040,7 +1065,7 @@ function renderWordBanner() {
         ? `Your word: <span class="word">${myWord}</span>`
         : "Your word: …";
       gameWordDisplayEl.innerHTML = myWord
-        ? `Word: <span class="word">${myWord}</span>`
+        ? `${catPrefix}Word: <span class="word">${myWord}</span>`
         : "Word: …";
     } else if (wordLength > 0) {
       let blanks = "";
@@ -1050,7 +1075,7 @@ function renderWordBanner() {
         if (i < wordLength - 1) blanks += " ";
       }
       gameWordBannerEl.innerHTML = `<span class="guess-label">Guess the word:</span> <span class="blanks">${blanks}</span>`;
-      gameWordDisplayEl.innerHTML = `Word: <span class="blanks">${blanks}</span>`;
+      gameWordDisplayEl.innerHTML = `${catPrefix}Word: <span class="blanks">${blanks}</span>`;
     } else {
       gameWordBannerEl.textContent = "Guess the word!";
       gameWordDisplayEl.innerHTML = "Word: -----";
@@ -1064,6 +1089,7 @@ function renderWordBanner() {
   }
   canvas.style.cursor = amCurrentDrawer() ? "crosshair" : "default";
   updateMobileHints();
+  updateMobileCategory();
 }
 
 function updateTimerDisplay(seconds) {
@@ -1567,6 +1593,26 @@ window.addEventListener("orientationchange", () => {
 });
 
 // ---------------------------------------------------------------------------
+// Visual viewport / keyboard handling — keeps the game inside the visible area
+// so the canvas never disappears when the on-screen keyboard opens.
+// ---------------------------------------------------------------------------
+function syncViewportHeight() {
+  const vv = window.visualViewport;
+  if (!vv) return;
+  const avail = Math.max(220, Math.round(vv.height - (vv.offsetTop || 0)));
+  document.documentElement.style.setProperty("--app-height", avail + "px");
+  const keyboardOpen = window.innerHeight - avail > 60;
+  document.body.classList.toggle("keyboard-open", keyboardOpen);
+  fitCanvasToStage();
+}
+if (window.visualViewport) {
+  window.visualViewport.addEventListener("resize", syncViewportHeight);
+  window.visualViewport.addEventListener("scroll", syncViewportHeight);
+}
+window.addEventListener("resize", syncViewportHeight);
+syncViewportHeight();
+
+// ---------------------------------------------------------------------------
 // Connection banner + reconnection
 // ---------------------------------------------------------------------------
 const connBannerEl = document.createElement("div");
@@ -1645,6 +1691,7 @@ socket.on("turn_started", (data) => {
   currentDrawerId = data.drawerId;
   currentDrawerName = data.drawerName;
   myWord = null;
+  currentCategory = null;
   choosingPhase = !!data.choosing;
   wordLength = 0;
   wordOptions = [];
@@ -1673,6 +1720,7 @@ socket.on("word_chosen", (data) => {
   wordLength = data.wordLength;
   turnDuration = data.turnDuration || 60;
   maxHints = data.hintCount !== undefined ? data.hintCount : 2;
+  currentCategory = data.category || null;
   revealedLetters = [];
   gameTimerFillEl.style.width = "100%";
   gameTimerFillEl.classList.remove("low");
@@ -1694,6 +1742,7 @@ socket.on("turn_timer", (data) => {
 
 socket.on("turn_ended", (data) => {
   myWord = null;
+  currentCategory = null;
   choosingPhase = false;
   wordOptions = [];
   hasReactedThisTurn = false;
@@ -1718,6 +1767,7 @@ socket.on("hint_revealed", (data) => {
 socket.on("round_ended", () => {
   myWord = null;
   wordLength = 0;
+  currentCategory = null;
   hasReactedThisTurn = false;
   revealedLetters = [];
   updateChatDisabledState();
@@ -1735,6 +1785,7 @@ socket.on("round_starting", (data) => {
 socket.on("game_aborted", (data) => {
   myWord = null;
   wordLength = 0;
+  currentCategory = null;
   hasReactedThisTurn = false;
   revealedLetters = [];
   updateChatDisabledState();
@@ -1746,6 +1797,7 @@ socket.on("game_aborted", (data) => {
 socket.on("game_over", () => {
   myWord = null;
   wordLength = 0;
+  currentCategory = null;
   choosingPhase = false;
   wordOptions = [];
   hasReactedThisTurn = false;

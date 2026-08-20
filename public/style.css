@@ -513,7 +513,7 @@ body:has(#room-game:not(.hidden)) .title-bar {
 
 .room-game {
   display: grid;
-  grid-template-columns: 160px minmax(0, 1fr) 240px;
+  grid-template-columns: 200px minmax(0, 1fr) 300px;
   gap: 0;
   height: 100vh;
   height: 100dvh;
@@ -1425,7 +1425,7 @@ body:has(#room-game:not(.hidden)) .title-bar {
 /* Tablet/landscape game: narrower sidebar + chat */
 @media (min-width: 720px) and (max-width: 1099px) {
   .room-game {
-    grid-template-columns: 140px minmax(0, 1fr) 220px;
+    grid-template-columns: 160px minmax(0, 1fr) 260px;
   }
 }
 
@@ -1773,7 +1773,7 @@ body:has(#room-game:not(.hidden)) .title-bar {
 /* ---- Extra large screens ---- */
 @media (min-width: 1400px) {
   .room-game {
-    grid-template-columns: 180px minmax(0, 1fr) 280px;
+    grid-template-columns: 220px minmax(0, 1fr) 330px;
   }
 }
 
@@ -2472,12 +2472,312 @@ select:focus-visible {
   }
 }
 
+/* ---- Category label (used inside the desktop word line) ---- */
+.game-category-label {
+  color: var(--accent);
+  font-weight: 800;
+}
+/* Category chip is a mobile-only element */
+.mobile-category {
+  display: none;
+}
+.mobile-hints {
+  gap: 0.25rem;
+}
+.mobile-hints .lucide {
+  width: 13px;
+  height: 13px;
+}
+
+/* ============================================
+   RESPONSIVE GAME UI — authoritative mobile portrait layout
+   Order: HEADER → WORD/HINTS → TOOLS → CANVAS → CHAT (~30%)
+   Covers phones (≤719px) and portrait tablets (≤820px wide).
+   ============================================ */
+@media (max-width: 719px), (max-width: 820px) and (orientation: portrait) {
+
+  /* No accidental page scroll / pull-to-refresh during the game */
+  body:has(#room-game:not(.hidden)) {
+    overflow: hidden;
+    overscroll-behavior: none;
+  }
+  body:has(#room-game:not(.hidden)) .app {
+    height: 100vh;
+    height: 100dvh;
+  }
+
+  /* Game screen: flex column — center area on top, chat fixed at ~30% below.
+     Height tracks the visual viewport (--app-height, set in JS) so the canvas
+     stays visible when the on-screen keyboard opens. */
+  .room-game {
+    display: flex;
+    flex-direction: column;
+    height: var(--app-height, 100vh);
+    height: var(--app-height, 100dvh);
+    min-height: 0;
+    grid-template-columns: none;
+    grid-template-rows: none;
+    overflow: hidden;
+  }
+
+  /* Desktop sidebar hidden on mobile — players live in the Players tab */
+  .game-sidebar { display: none; }
+
+  /* Center column: header → word/hints → tools → canvas */
+  .game-center {
+    flex: 1 1 auto;
+    min-width: 0;
+    min-height: 0;
+    display: flex;
+    flex-direction: column;
+    padding: 0.35rem 0.5rem 0.25rem;
+    overflow-y: auto; /* only scrolls if content overflows (e.g. keyboard open) */
+    overflow-x: hidden;
+    overscroll-behavior: contain;
+    position: relative;
+  }
+
+  .mobile-game-header { order: 1; flex-shrink: 0; }
+  .game-status-row { order: 2; flex-shrink: 0; }
+  .canvas-toolbar { order: 3; flex-shrink: 0; }
+  .canvas-stage { order: 4; flex: 1 1 0; min-height: 150px; }
+  .mobile-guess-row { display: none; }
+  .game-header,
+  .timer-bar { display: none; }
+
+  /* ---- Compact header: menu · round · sound · timer ---- */
+  .mobile-game-header {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    padding: calc(0.3rem + env(safe-area-inset-top)) 0.6rem 0.35rem;
+    background: var(--panel);
+    border-bottom: 1px solid var(--panel-border);
+    z-index: 5;
+  }
+  .mobile-round-info {
+    flex: 1;
+    text-align: center;
+    font-size: 0.76rem;
+    font-weight: 800;
+    color: var(--muted);
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+  .mobile-timer {
+    min-width: 58px;
+    text-align: center;
+    font-size: 1.05rem;
+    font-weight: 900;
+    font-variant-numeric: tabular-nums;
+    color: var(--text);
+    background: var(--accent-light);
+    border: 1px solid #dbeafe;
+    border-radius: 999px;
+    padding: 0.15rem 0.55rem;
+  }
+  .mobile-timer.low {
+    color: #fff;
+    background: var(--danger);
+    border-color: var(--danger);
+    animation: pulse 1s infinite;
+  }
+  .mobile-menu-btn,
+  .mobile-sound-btn {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 38px;
+    height: 38px;
+    border: 1px solid var(--panel-border);
+    border-radius: var(--radius-sm);
+    background: #f8fafc;
+    color: var(--muted);
+    cursor: pointer;
+  }
+  .mobile-menu-btn:active,
+  .mobile-sound-btn:active {
+    background: #e2e8f0;
+  }
+
+  /* ---- Status row: category chip (full width) + word banner + hints ---- */
+  .game-status-row {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 0.3rem 0.4rem;
+    margin-bottom: 0.3rem;
+  }
+  .mobile-category {
+    flex-basis: 100%;
+    display: inline-flex;
+    align-items: center;
+    align-self: flex-start;
+    gap: 0.3rem;
+    padding: 0.14rem 0.55rem;
+    font-size: 0.68rem;
+    font-weight: 800;
+    letter-spacing: 0.4px;
+    color: var(--accent);
+    background: var(--accent-light);
+    border: 1px solid #dbeafe;
+    border-radius: 999px;
+    white-space: nowrap;
+  }
+  .game-word-banner {
+    flex: 1 1 auto;
+    min-width: 0;
+    min-height: 2rem;
+    margin-bottom: 0;
+    padding: 0.32rem 0.5rem;
+    font-size: 0.84rem;
+    letter-spacing: 0.4px;
+  }
+  .mobile-hints {
+    flex-shrink: 0;
+  }
+
+  /* Word-choice buttons stay on one horizontally-scrollable row */
+  .word-options {
+    flex-wrap: nowrap;
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+    scrollbar-width: none;
+    gap: 0.4rem;
+  }
+  .word-options::-webkit-scrollbar { display: none; }
+
+  /* ---- Toolbar: ABOVE the canvas, one row, only it scrolls horizontally ---- */
+  .canvas-toolbar {
+    display: flex;
+    flex-wrap: nowrap;
+    align-items: center;
+    overflow-x: auto;
+    overflow-y: hidden;
+    -webkit-overflow-scrolling: touch;
+    overscroll-behavior-x: contain;
+    scrollbar-width: none;
+    padding: 0.3rem 0.45rem;
+    gap: 0.35rem;
+    margin-bottom: 0.3rem;
+    background: var(--panel);
+    border: 1px solid var(--panel-border);
+    border-radius: var(--radius-sm);
+    box-shadow: var(--shadow-sm);
+  }
+  .canvas-toolbar::-webkit-scrollbar { display: none; }
+  .canvas-toolbar > * { flex-shrink: 0; }
+  .canvas-toolbar .btn-small {
+    padding: 0.5rem 0.7rem;
+    font-size: 0.8rem;
+    min-height: 38px;
+  }
+
+  /* ---- Canvas: fills the available width, stays centered ---- */
+  .canvas-stage {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 0;
+  }
+  #drawing-canvas {
+    max-width: 100%;
+    max-height: 100%;
+    box-shadow: var(--shadow-md);
+  }
+
+  /* ---- Chat: permanent bottom section (~30%), internal scroll only ---- */
+  .game-chat {
+    position: relative;
+    left: auto;
+    right: auto;
+    bottom: auto;
+    flex: 0 0 clamp(160px, 30%, 42dvh);
+    min-height: 0;
+    max-height: none;
+    z-index: 20;
+    display: flex;
+    flex-direction: column;
+    border-left: none;
+    border-top: 1px solid var(--panel-border);
+    border-radius: 0;
+    background: var(--panel);
+    box-shadow: 0 -2px 10px rgba(0, 0, 0, 0.04);
+    transform: none;
+    overflow: hidden;
+    padding-bottom: env(safe-area-inset-bottom);
+  }
+  /* X/minimize collapses the chat to a thin tab bar so the canvas can grow */
+  .game-chat.minimized {
+    flex: 0 0 48px;
+  }
+  .game-chat.minimized .sheet-tab-content {
+    display: none;
+  }
+  .game-chat .chat-panel {
+    height: 100%;
+    min-height: 0;
+    padding: 0.25rem 0.45rem 0.2rem;
+  }
+  .game-chat .chat-messages {
+    flex: 1 1 auto;
+    min-height: 0;
+  }
+  .game-chat .chat-input-row {
+    flex-shrink: 0;
+  }
+  .mobile-sheet-backdrop {
+    display: none !important;
+  }
+
+  /* Touch-friendly taps everywhere on mobile */
+  .mobile-menu-btn,
+  .mobile-sound-btn,
+  .sheet-tab,
+  .sheet-close,
+  .tool-dropdown-btn,
+  .shape-btn,
+  .size-adj-btn,
+  .btn,
+  .reaction-btn {
+    -webkit-tap-highlight-color: transparent;
+    touch-action: manipulation;
+  }
+
+  /* ---- When the on-screen keyboard is open: keep the canvas visible ---- */
+  body.keyboard-open .canvas-stage {
+    min-height: 130px;
+  }
+  body.keyboard-open .mobile-category,
+  body.keyboard-open .mobile-hints {
+    display: none;
+  }
+  body.keyboard-open .game-status-row {
+    gap: 0.15rem;
+    margin-bottom: 0.2rem;
+  }
+  body.keyboard-open .game-word-banner {
+    padding: 0.26rem 0.45rem;
+    font-size: 0.8rem;
+    min-height: 1.7rem;
+  }
+  body.keyboard-open .canvas-toolbar {
+    margin-bottom: 0.2rem;
+    padding-top: 0.24rem;
+    padding-bottom: 0.24rem;
+  }
+}
+
 /* ============================================
    MOBILE LANDSCAPE — players | canvas | chat
    ============================================ */
 @media (max-width: 1099px) and (orientation: landscape) and (max-height: 560px) {
   .room-game {
-    grid-template-columns: 120px minmax(0, 1fr) 200px;
+    display: grid;
+    grid-template-columns: 140px minmax(0, 1fr) 240px;
     grid-template-rows: 1fr;
   }
 
@@ -2501,7 +2801,8 @@ select:focus-visible {
   .mobile-game-header,
   .mobile-menu-btn,
   .mobile-sound-btn,
-  .mobile-hints {
+  .mobile-hints,
+  .mobile-category {
     display: none;
   }
 
@@ -2552,6 +2853,10 @@ select:focus-visible {
   }
   .mobile-sheet-tabs {
     display: none;
+  }
+  /* Chat always visible in landscape, even if it was minimized in portrait */
+  .game-chat.minimized .sheet-tab-content {
+    display: flex;
   }
   .sheet-tab-content {
     flex: 1;
